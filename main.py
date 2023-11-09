@@ -221,7 +221,7 @@ def experiment3():
 
 def main(k):
     crewnum = 2
-    shp = Ship()
+    shp = Ship(3)
     shp.generate_ship()
 
     i, j = shp.get_unoccupied_cell()
