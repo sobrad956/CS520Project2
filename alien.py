@@ -16,6 +16,8 @@ class Alien:
         self.ship.ship[self.row][self.col].add_alien()
         if self.ship.ship[self.row][self.col].contains_bot():
             print("Mission Failed, Bot Captured")
+            return True
+        return False
 
     def move_down(self):
         self.ship.ship[self.row][self.col].remove_alien()
@@ -23,6 +25,8 @@ class Alien:
         self.ship.ship[self.row][self.col].add_alien()
         if self.ship.ship[self.row][self.col].contains_bot():
             print("Mission Failed, Bot Captured")
+            return True
+        return False
     
     def move_right(self):
         self.ship.ship[self.row][self.col].remove_alien()
@@ -30,6 +34,8 @@ class Alien:
         self.ship.ship[self.row][self.col].add_alien()
         if self.ship.ship[self.row][self.col].contains_bot():
             print("Mission Failed, Bot Captured")
+            return True
+        return False
 
     def move_left(self):
         self.ship.ship[self.row][self.col].remove_alien()
@@ -37,6 +43,8 @@ class Alien:
         self.ship.ship[self.row][self.col].add_alien()
         if self.ship.ship[self.row][self.col].contains_bot():
             print("Mission Failed, Bot Captured")
+            return True
+        return False
     
     def choose_action(self):
         avail_choices = [0]
@@ -53,10 +61,10 @@ class Alien:
     def move(self):
         choice = self.choose_action()
         if choice == 1:
-            self.move_left()
+            return self.move_left()
         if choice == 2:
-            self.move_right()
+            return self.move_right()
         if choice == 3:
-            self.move_up()
+            return self.move_up()
         if choice == 4:
-            self.move_down()
+            return self.move_down()

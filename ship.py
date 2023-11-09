@@ -1,8 +1,9 @@
 import random
 import math
 import numpy as np
+from queue import Queue
 
-#https://rutgers.app.box.com/s/ne763kb0rn7pbel6m3c9y78jyy5386vc
+
 class Cell:
     """ This class is used to record the state of a cell on the ship and any occupants on the cell """
     
@@ -14,34 +15,42 @@ class Cell:
         self.alien = False
         self.crew = False
         self.bot = False
-        self.alien1_prob = 0
-        self.alien2_prob = 0
-        self.crew1_prob = 0
-        self.crew2_prob = 0
+        self.distances = [-1, -1]  # distance from crew member for each crew member, negative if no crew or cell closed
+        #self.alien1_prob = 0
+        #self.alien2_prob = 0
+        #self.crew1_prob = 0
+        #self.crew2_prob = 0
 
-    def get_crew1_prob(self):
-        return self.crew1_prob
 
-    def set_crew1_prob(self, p):
-        self.crew1_prob = p
+    def get_distance(self, pos):
+        return self.distances[pos]
 
-    def get_crew2_prob(self):
-        return self.crew2_prob
+    def set_distance(self, pos, dist):
+        self.distances[pos] = dist
 
-    def set_crew2_prob(self, p):
-        self.crew2_prob = p
-
-    def get_alien1_prob(self):
-        return self.alien1_prob
-
-    def set_alien1_prob(self, p):
-        self.alien1_prob = p
-
-    def get_alien2_prob(self):
-        return self.alien2_prob
-
-    def set_alien2_prob(self, p):
-        self.alien2_prob = p
+    # def get_crew1_prob(self):
+    #     return self.crew1_prob
+    #
+    # def set_crew1_prob(self, p):
+    #     self.crew1_prob = p
+    #
+    # def get_crew2_prob(self):
+    #     return self.crew2_prob
+    #
+    # def set_crew2_prob(self, p):
+    #     self.crew2_prob = p
+    #
+    # def get_alien1_prob(self):
+    #     return self.alien1_prob
+    #
+    # def set_alien1_prob(self, p):
+    #     self.alien1_prob = p
+    #
+    # def get_alien2_prob(self):
+    #     return self.alien2_prob
+    #
+    # def set_alien2_prob(self, p):
+    #     self.alien2_prob = p
 
     def get_location(self):
         return self.row, self.col
@@ -90,29 +99,29 @@ class Ship:
     """ This class is used to arrange cells in a grid to represent the ship and generate it at time T=0 """
     
     def __init__(self):
-        self.D = 50  # The dimension of the ship as a square
+        self.D = 7 # The dimension of the ship as a square
         self.ship = np.asarray([[Cell(i, j) for j in range(self.D)] for i in range(self.D)])  # creates a DxD 2D grid of closed cells
-        self.crew_loc = [-1, -1]
-        self.crew_probs = self.ship = np.asarray([[0 for j in range(self.D)] for i in range(self.D)])
-        self.alien_probs = self.ship = np.asarray([[0 for j in range(self.D)] for i in range(self.D)])
+        self.bot_loc = [-1, -1]  # Stores the initial position of the bot, used to restrict alien generation cells
+        # self.crew_probs = np.asarray([[0 for j in range(self.D)] for i in range(self.D)])
+        # self.alien_probs = np.asarray([[0 for j in range(self.D)] for i in range(self.D)])
 
-    def get_crew_probs(self):
-        return self.crew_probs
+    # def get_crew_probs(self):
+    #     return self.crew_probs
+    #
+    # def get_alien_probs(self):
+    #     return self.alien_probs
+    #
+    # def set_crew_probs(self, i, j, p):
+    #     self.crew_probs[i][j] = p
+    #
+    # def set_alien_probs(self, i, j, p):
+    #     self.alien_probs[i][j] = p
 
-    def get_alien_probs(self):
-        return self.alien_probs
-
-    def set_crew_probs(self, i, j, p):
-        self.crew_probs[i][j] = p
-
-    def set_alien_probs(self, i, j, p):
-        self.alien_probs[i][j] = p
-
-    def set_crew_loc(self, i, j):
-        self.crew_loc = [i, j]
+    def set_bot_loc(self, i, j):
+        self.bot_loc = [i, j]
     
-    def get_crew_loc(self):
-        return self.crew_loc
+    def get_bot_loc(self):
+        return self.bot_loc
 
     def get_sensor_region(self, i, j, k):
         return self.ship[max(i - k, 0):min(i + k + 1, self.D), max(j - k, 0):min(j + k + 1, self.D)]
@@ -176,36 +185,35 @@ class Ship:
             neighbors.append((i, j+1))
         return neighbors
     
-    def get_unoccupied_cell(self, is_crew):
+    def get_unoccupied_cell(self):
+        """ Returns an unoccupied cell, crew members restricted from bot cell"""
         while True:
             i = random.randint(0, (self.D-1)) 
             j = random.randint(0, (self.D-1))
-            if not is_crew:
-                if self.ship[i][j].is_open() and not self.ship[i][j].contains_alien() and not self.ship[i][j].contains_bot():
-                    return i, j
-            else:
-                if self.ship[i][j].is_open() and not self.ship[i][j].contains_bot():
-                    return i, j
+            if self.ship[i][j].is_open() and not self.ship[i][j].contains_bot():
+                return i, j
 
     def get_unoccupied_alien_cell(self, k):
+        """ Returns an unoccupied cell, aliens restricted from detection square"""
         while True:
             i = random.randint(0, (self.D-1))
             j = random.randint(0, (self.D-1))
 
-            if (i < (self.crew_loc[0] - k)) or (i > (self.crew_loc[0] + k)):
-                if (j < (self.crew_loc[1] - k)) or (j > (self.crew_loc[1] + k)):
-                    if self.ship[i][j].is_open() and not self.ship[i][j].contains_bot():
+            if i < (self.bot_loc[0] - k) or i > (self.bot_loc[0] + k):
+                if j < (self.bot_loc[1] - k) or j > (self.bot_loc[1] + k):
+                    if self.ship[i][j].is_open() and not self.ship[i][j].contains_alien() and not self.ship[i][j].contains_bot():
                         return i, j
 
     def empty_ship(self):
+        """ Resets the ship to default without generating new ship layout """
         for i in range(self.D):
             for j in range(self.D):
                 if self.ship[i][j].contains_bot():
+                    self.set_bot_loc(-1, -1)
                     self.ship[i][j].remove_bot()
                 if self.ship[i][j].contains_alien():
                     self.ship[i][j].remove_alien()
                 if self.ship[i][j].contains_crew():
-                    self.set_crew_loc(-1, -1)
                     self.ship[i][j].remove_crew()
 
     def generate_ship(self):
@@ -214,7 +222,7 @@ class Ship:
         # Randomly select a cell on the interior of the ship (not on the edge)
         i = random.randint(1, (self.D-2)) 
         j = random.randint(1, (self.D-2))
-                
+
         self.ship[i][j].open_cell()  # Open the selected cell
         
         flag = True
@@ -242,6 +250,42 @@ class Ship:
             i, j = random.sample(cell, 1)[0]  # For each dead end, randomly select one closed neighbor
             self.ship[i][j].open_cell()  # Open the selected closed neighbor
 
+    def distances_from_crew(self, start_cells):
+        """ Finds the distance from every cell to the crew members """
+        for i in range(0, len(start_cells)):
+            fringe = Queue()
+            visited = []
+            cur_state = (start_cells[i], 0)
+            fringe.put(cur_state)
 
+            while not fringe.empty():
+                cur_state = fringe.get()
+                cur_state[0].set_distance(i, cur_state[1])
+                visited.append(cur_state[0])
 
+                children = []
+                cur_row = cur_state[0].row
+                cur_col = cur_state[0].col
+                if cur_row != 0:
+                    children.append(self.ship[cur_row - 1][cur_col])
+                if cur_row != (self.D - 1):
+                    children.append(self.ship[cur_row + 1][cur_col])
+                if cur_col != 0:
+                    children.append(self.ship[cur_row][cur_col - 1])
+                if cur_col != (self.D - 1):
+                    children.append(self.ship[cur_row][cur_col + 1])
 
+                for child in children:
+                    if child.is_open() and (child not in visited):
+                        fringe.put((child, cur_state[1]+1))
+
+        # for i in range(len(self.ship)):
+        #     for j in range(len(self.ship[0])):
+        #         print(self.ship[i][j].get_distance(0), end=" ")
+        #     print()
+        #
+        # print()
+        # for i in range(len(self.ship)):
+        #     for j in range(len(self.ship[0])):
+        #         print(self.ship[i][j].get_distance(1), end=" ")
+        #     print()

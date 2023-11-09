@@ -18,21 +18,22 @@ def experiment1(k, alphas):
 
     shp = Ship()
     for board in range(numBoards):
-        shp.empty_ship()
         shp.generate_ship()
-
         for a, alpha in enumerate(alphas):
             for botnum in bots:
                 for trial in range(numTrials):
-                    i, j = shp.get_unoccupied_cell(False)
+                    i, j = shp.get_unoccupied_cell()
                     bot = Bot(i, j, k, shp, botnum)
 
-                    i, j = shp.get_unoccupied_cell(True)
+                    start_cells = []
+                    i, j = shp.get_unoccupied_cell()
                     shp.ship[i][j].add_crew()
-                    shp.set_crew_loc(i, j)
+                    start_cells.append(shp.ship[i][j])
 
                     i, j = shp.get_unoccupied_alien_cell(k)
                     alien = Alien(i, j, shp)
+
+                    shp.distances_from_crew(start_cells)
 
                     #Initialize ship probabilities
 
@@ -41,12 +42,13 @@ def experiment1(k, alphas):
                     T = 0
                     flag = True
                     while flag:
-                        #SENSORS
-                        #aliendetected = bot.detect_alien()
-                        #crewbeep = bot.detect_crew(1)
+                        aliendetected = bot.detect_alien()
+                        crewbeep = bot.detect_crew(1, alpha)
+
                         #Update probabilities
-                        #BOT MOVES
-                        #i, j = bot.move() /need logic to pick highest prob square from ship.crew_probs
+
+                        i, j = bot.move()
+
                         if shp.ship[i][j].contains_alien():
                             print(f"Dead: {T}")
                             avg_moves_to_save[botnum - 1][a] += T / (numBoards * numTrials)
@@ -59,9 +61,7 @@ def experiment1(k, alphas):
                             shp.ship[i][j].remove_crew()
                             flag = False
                             break
-                        # alien moves
-                        # alien.move()
-                        if shp.ship[i][j].contains_bot():
+                        if alien.move():
                             print(f"Dead: {T}")
                             avg_moves_to_save[botnum - 1][a] += T / (numBoards * numTrials)
                             flag = False
@@ -219,102 +219,93 @@ def experiment3():
                 shp.empty_ship()
 
 
-def main(k, d, botType, numAliens):
-    numBoards = 1
-    numTrials = 1
-    botTypes = 1
-
-    saved_crew_results = np.zeros((botTypes, numAliens))
-    time_survived_results = np.zeros((botTypes, numAliens))
-
+def main(k):
+    crewnum = 2
     shp = Ship()
-    for board in range(numBoards):
-        shp.empty_ship()
-        shp.generate_ship()
+    shp.generate_ship()
 
-        for botType in range(1, botTypes + 1):
-            # One Alien, One Crew
-            # Bot 1
-            # Bot 2
-            # One Alien, Two Crew
-            # Bot 3
-            # Bot 4
-            # Bot 5
-            # Two Aliens, Two Crew
-            # Bot 6
-            # Bot 7
-            # Bot 8
+    i, j = shp.get_unoccupied_cell()
+    bot = Bot(i, j, k, shp, 1)
 
-            for trial in range(numTrials):
-                aliens = []
+    start_cells = []
+    for num in range(crewnum):
+        i, j = shp.get_unoccupied_cell()
+        shp.ship[i][j].add_crew()
+        start_cells.append(shp.ship[i][j])
 
-                i, j = shp.get_unoccupied_cell(False)
-                bot = Bot(i, j, shp, botType)
+    i, j = shp.get_unoccupied_alien_cell(k)
+    alien = Alien(i, j, shp)
 
-                i, j = shp.get_unoccupied_cell(True)
-                shp.ship[i][j].add_crew()
-                shp.set_crew_loc(i, j)
-
-                for alien in range(numAliens):
-                    i, j = shp.get_unoccupied_alien_cell(k)
-                    aliens.append(Alien(i, j, shp))
-
-                shp.print_ship()
-                print("board:", board + 1, "botType: ", botType, "trial number:", trial + 1)
-                T = 0
-                while T <= 1000:
-                    # bot moves
-                    if shp.ship[i][j].contains_alien():
-                        print(f"Dead: {T}")
-                        time_survived_results[botType][k] += T
-                        break
-                    if shp.ship[i][j].contains_crew():
-                        print(f"Saved: {T}")
-                        saved_crew_results[botType][k] += 1
-                        shp.ship[i][j].remove_crew()
-                        i, j = shp.get_unoccupied_cell(True)
-                        shp.ship[i][j].add_crew()
-                        shp.set_crew_loc(i, j)
-                    # alien moves random.shuffle(aliens)
-                    if shp.ship[i][j].contains_bot():
-                        print(f"Dead: {T}")
-                        time_survived_results[botType][k] += T
-                        break
-                    # detect alien
-                    # detect crew
-                    T += 1
-                    if T >= 1000:
-                        time_survived_results[botType][k] += T
-                shp.empty_ship()
-    saved_crew_results[botType][k] /= (numTrials * numBoards)
-    time_survived_results[botType][k] /= (numTrials * numBoards)
-    print(saved_crew_results)
+    shp.distances_from_crew(start_cells)
+    shp.print_ship()
     print()
-    print(time_survived_results)
+
+    print(bot.detect_alien())
+    print(bot.detect_crew(crewnum, 0.1))
 
 
-#     for botType in range(botTypes):
-#         plt.plot(saved_crew_results[botType][1::3], label=f'Bot {botType+1}')
-#     plt.xlabel('K: number of aliens')
-#     plt.ylabel('Average Number of crew members saved')
-#     plt.title('Average Number of Crew Members Saved vs Number of Aliens')
-#     plt.legend(loc='best')
-#     plt.savefig('crewplot.png')
-#     np.save('crewdata.npy', saved_crew_results)
-#     plt.plot()
-#     plt.close()
+
+
+#     numBoards = 30
+#     numTrials = 10
+#     bots = [1, 2]
+#     avg_crew_saved = np.zeros((2, len(alphas)))
+#     avg_moves_to_save = np.zeros((2, len(alphas)))
+#     prob_success = np.zeros((2, len(alphas)))
 #
-#     for botType in range(botTypes):
-#         plt.plot(time_survived_results[botType][1::3], label=f'Bot {botType+1}')
-#     plt.xlabel('K: number of aliens')
-#     plt.ylabel('Average Time Limit Reached')
-#     plt.title('Average Time Limit Reached vs Number of Aliens')
-#     plt.legend(loc='best')
-#     plt.savefig('timeplot.png')
-#     np.save('timedata.npy', time_survived_results)
-#     plt.plot()
-#     plt.close()
+#     shp = Ship()
+#     for board in range(numBoards):
+#         shp.empty_ship()
+#         shp.generate_ship()
+#
+#         for a, alpha in enumerate(alphas):
+#             for botnum in bots:
+#                 for trial in range(numTrials):
+#                     i, j = shp.get_unoccupied_cell(False)
+#                     bot = Bot(i, j, k, shp, botnum)
+#
+#                     i, j = shp.get_unoccupied_cell(True)
+#                     shp.ship[i][j].add_crew()
+#                     shp.set_crew_loc(i, j)
+#
+#                     i, j = shp.get_unoccupied_alien_cell(k)
+#                     alien = Alien(i, j, shp)
+#
+#                     #Initialize ship probabilities
+#
+#                     shp.print_ship()
+#                     print('Board:', board, ' Botnum:', botnum, ' Trial:', trial)
+#                     T = 0
+#                     flag = True
+#                     while flag:
+#                         #SENSORS
+#                         #aliendetected = bot.detect_alien()
+#                         #crewbeep = bot.detect_crew(1)
+#                         #Update probabilities
+#                         #BOT MOVES
+#                         #i, j = bot.move() /need logic to pick highest prob square from ship.crew_probs
+#                         if shp.ship[i][j].contains_alien():
+#                             print(f"Dead: {T}")
+#                             avg_moves_to_save[botnum - 1][a] += T / (numBoards * numTrials)
+#                             flag = False
+#                             break
+#                         if shp.ship[i][j].contains_crew():
+#                             print(f"Saved: {T}")
+#                             avg_crew_saved[botnum - 1][a] += 1 / (numBoards * numTrials)
+#                             prob_success[botnum - 1][a] += 1 / (numBoards * numTrials)
+#                             shp.ship[i][j].remove_crew()
+#                             flag = False
+#                             break
+#                         # alien moves
+#                         # alien.move()
+#                         if shp.ship[i][j].contains_bot():
+#                             print(f"Dead: {T}")
+#                             avg_moves_to_save[botnum - 1][a] += T / (numBoards * numTrials)
+#                             flag = False
+#                             break
+#                         T += 1
+#                     shp.empty_ship()
 
 
 if __name__ == "__main__":
-    experiment1(7, 2, 1, 1)
+    main(3)
