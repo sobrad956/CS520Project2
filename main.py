@@ -236,7 +236,7 @@ def main(k):
     i, j = shp.get_unoccupied_alien_cell(k)
     alien = Alien(i, j, shp)
 
-    shp.distances_from_crew(start_cells)
+    shp.distances_from_crew()
     shp.print_ship()
     #print(shp.ship[0][0].distances)
     print("Finished")
@@ -246,8 +246,8 @@ def main(k):
     #     print(a)
 
 
-    #print(bot.detect_alien())
-    #print(bot.detect_crew(crewnum, 0.1))
+    print(bot.detect_alien())
+    print(bot.detect_crew(start_cells))
 
 
 

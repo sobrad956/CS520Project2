@@ -8,7 +8,7 @@ from queue import Queue
 class Cell:
     """ This class is used to record the state of a cell on the ship and any occupants on the cell """
     
-    def __init__(self, row, col):
+    def __init__(self, row, col, d):
         """ By default, a cell is closed and nothing occupies it """
         self.state = '#'
         self.row = row
@@ -16,9 +16,10 @@ class Cell:
         self.alien = False
         self.crew = False
         self.bot = False
+        self.d = d
         #self.distances = [-1, -1]  # distance from crew member for each crew member, negative if no crew or cell closed
 
-        self.distances = np.asarray([[-1 for j in range(20)] for i in range(20)])
+        self.distances = np.asarray([[-1 for j in range(self.d)] for i in range(self.d)])
         #self.alien1_prob = 0
         #self.alien2_prob = 0
         #self.crew1_prob = 0
@@ -98,8 +99,8 @@ class Ship:
     """ This class is used to arrange cells in a grid to represent the ship and generate it at time T=0 """
     
     def __init__(self, k):
-        self.D = 20 # The dimension of the ship as a square
-        self.ship = np.asarray([[Cell(i, j) for j in range(self.D)] for i in range(self.D)])  # creates a DxD 2D grid of closed cells
+        self.D = 7 # The dimension of the ship as a square
+        self.ship = np.asarray([[Cell(i, j, self.D) for j in range(self.D)] for i in range(self.D)])  # creates a DxD 2D grid of closed cells
         self.bot_loc = [-1, -1]  # Stores the initial position of the bot, used to restrict alien generation cells
         self.crew_probs = np.asarray([[0 for j in range(self.D)] for i in range(self.D)])
         self.alien_probs = np.asarray([[0 for j in range(self.D)] for i in range(self.D)])
@@ -250,7 +251,7 @@ class Ship:
             i, j = random.sample(cell, 1)[0]  # For each dead end, randomly select one closed neighbor
             self.ship[i][j].open_cell()  # Open the selected closed neighbor
 
-    def distances_from_crew(self, start_cells):
+    def distances_from_crew(self):
         """ Finds the distance from every cell to the crew members """
         start_cells = []
         for start_i in range(self.D):
