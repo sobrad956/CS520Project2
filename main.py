@@ -23,7 +23,7 @@ def experiment1(k, alphas):
             for botnum in bots:
                 for trial in range(numTrials):
                     i, j = shp.get_unoccupied_cell()
-                    bot = Bot(i, j, k, shp, botnum)
+                    bot = Bot(i, j, k, shp, botnum, alpha)
 
                     start_cells = []
                     i, j = shp.get_unoccupied_cell()

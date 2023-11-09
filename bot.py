@@ -4,7 +4,7 @@ import random
 
 
 class Bot:
-    def __init__(self, row, col, k, ship, type):
+    def __init__(self, row, col, k, ship, type, alpha):
         self.row = row
         self.col = col
         self.k = k
@@ -12,6 +12,7 @@ class Bot:
         self.type = type
         self.ship.ship[self.row][self.col].add_bot()
         self.ship.set_bot_loc(self.row, self.col)
+        self.alpha = alpha
 
     def move_up(self):
         self.ship.ship[self.row][self.col].remove_bot()
@@ -68,16 +69,18 @@ class Bot:
                     return True
         return False
 
-    def get_beep_prob(self, crewnum, alpha):
+    def get_beep_prob(self, crewnum):
+        #crewnum is the crew number's index
         d = self.ship.ship[self.row][self.col].distances[crewnum]
-        prob = math.exp(-alpha * (d - 1))
+        prob = math.exp(-self.alpha * (d - 1))
         # print(prob)
         return prob
 
-    def detect_crew(self, numcrew, alpha):
+    def detect_crew(self, numcrew):
         """ Returns a beep with probability for each crew member based on distance """
+        #numcrew is the total number of crew members
         for i in range(0, numcrew):
-            prob = self.get_beep_prob(i, alpha)
+            prob = self.get_beep_prob(i, self.alpha)
             if random.random() < prob:
                 return True
         return False
