@@ -7,7 +7,7 @@ from queue import Queue
 class Cell:
     """ This class is used to record the state of a cell on the ship and any occupants on the cell """
     
-    def __init__(self, row, col):
+    def __init__(self, row, col, k):
         """ By default, a cell is closed and nothing occupies it """
         self.state = '#'
         self.row = row
@@ -18,6 +18,7 @@ class Cell:
         #self.distances = [-1, -1]  # distance from crew member for each crew member, negative if no crew or cell closed
 
         self.distances = np.asarray([[-1 for j in range(20)] for i in range(20)])
+        self.k = k
         #self.alien1_prob = 0
         #self.alien2_prob = 0
         #self.crew1_prob = 0
@@ -302,15 +303,22 @@ class Ship:
 
         #Probability updates
 
-        def get_det_sq_indicies(self, k):
+        def get_det_sq_indicies(self):
             #return array of the indices within the detection square
-            pass
+            cent = self.bot_loc
+            indices = []
+
+            for i in range(self.bot_loc[0]-(self.k+1), self.bot_loc[0]+(self.k+1)):
+                for j in range(self.bot_loc[1]-(self.k+1), self.bot_loc[1]+(self.k+1)):
+                    if i > 0 and i < self.D-1:
+                        if j > 0 and j < self.D-1:
+                            indices.append((i,j))
+
 
         #One Alien, One Crew 
 
         def one_one_alien_beep_update(self, beep):
             #Beep is boolean, whether or not aliens were detected
-            bot_loc = self.get_bot_loc()
             indices = self.get_det_sq_indicies()
 
             if beep:
@@ -356,8 +364,8 @@ class Ship:
 
             #Normalize the rest of the values
 
-            crew_norm_factor = np.sum(self.get_crew_probs())
-            alien_norm_factor = np.sum(self.get_alien_probs())
+            crew_norm_factor = np.sum(self.crew_probs())
+            alien_norm_factor = np.sum(self.alien_probs())
 
             self.crew_probs /= crew_norm_factor
             self.alien_probs /= alien_norm_factor
