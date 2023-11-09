@@ -1,9 +1,6 @@
-from queue import Queue
-from queue import PriorityQueue
 import math
 import numpy as np
 import random
-from collections import deque
 
 
 class Bot:
