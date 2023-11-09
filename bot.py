@@ -58,7 +58,7 @@ class Bot:
 
     def get_sensor_region(self, i, j):
         """ Returns the cells within the alien sensor region """
-        return self.ship.get_sensor_region(self.row, self.col, self.k)
+        return self.ship.get_sensor_region(self.row, self.col)
 
     def detect_alien(self):
         """ Returns True if an alien is in the sensor region, False otherwise """

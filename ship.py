@@ -211,6 +211,9 @@ class Ship:
 
     def empty_ship(self):
         """ Resets the ship to default without generating new ship layout """
+        self.crew_probs = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])
+        self.alien_probs = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])
+        self.bot = None
         for i in range(self.D):
             for j in range(self.D):
                 if self.ship[i][j].contains_bot():
