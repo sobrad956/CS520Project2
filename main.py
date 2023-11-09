@@ -16,7 +16,7 @@ def experiment1(k, alphas):
     avg_moves_to_save = np.zeros((2, len(alphas)))
     prob_success = np.zeros((2, len(alphas)))
 
-    shp = Ship()
+    shp = Ship(k)
     for board in range(numBoards):
         shp.generate_ship()
         for a, alpha in enumerate(alphas):
@@ -33,7 +33,9 @@ def experiment1(k, alphas):
                     i, j = shp.get_unoccupied_alien_cell(k)
                     alien = Alien(i, j, shp)
 
-                    shp.distances_from_crew(start_cells)
+                    shp.print_ship()
+                    shp.distances_from_crew()
+                    print("Calculated distances")
 
                     #Initialize ship probabilities
 
@@ -42,12 +44,12 @@ def experiment1(k, alphas):
                     T = 0
                     flag = True
                     while flag:
-                        aliendetected = bot.detect_alien()
-                        crewbeep = bot.detect_crew(1, alpha)
+                        #aliendetected = bot.detect_alien()
+                        #crewbeep = bot.detect_crew(1, alpha)
 
                         #Update probabilities
 
-                        i, j = bot.move()
+                        #i, j = bot.move()
 
                         if shp.ship[i][j].contains_alien():
                             print(f"Dead: {T}")
@@ -112,33 +114,39 @@ def experiment2(k, alphas):
     avg_moves_to_save = np.zeros((2, len(alphas)))
     prob_success = np.zeros((2, len(alphas)))
 
-    shp = Ship()
+    shp = Ship(k)
     for board in range(numBoards):
-        shp.empty_ship()
         shp.generate_ship()
-
         for a, alpha in enumerate(alphas):
             for botnum in bots:
                 for trial in range(numTrials):
-                    i, j = shp.get_unoccupied_cell(False)
-                    bot = Bot(i, j, shp, botnum)
+                    i, j = shp.get_unoccupied_cell()
+                    bot = Bot(i, j, k, shp, botnum, alpha)
 
-                    crew = []
+                    start_cells = []
                     for i in range(2):
-                        i, j = shp.get_unoccupied_cell(True)
+                        i, j = shp.get_unoccupied_cell()
                         shp.ship[i][j].add_crew()
-                        crew.append((i, j))
+                        start_cells.append(shp.ship[i][j])
                         # shp.set_crew_loc(i, j) #DOESNT WORK WITH TWO CREW
 
                     i, j = shp.get_unoccupied_alien_cell(k)
                     alien = Alien(i, j, shp)
 
                     shp.print_ship()
+                    shp.distances_from_crew()
+                    print("Calculated distances")
+
                     print('Board:', board, ' Botnum:', botnum, ' Trial:', trial)
                     T = 0
                     saved_counter = 0
                     while saved_counter != 2:
-                        # bot moves
+                        # aliendetected = bot.detect_alien()
+                        # crewbeep = bot.detect_crew(1, alpha)
+
+                        # Update probabilities
+
+                        # i, j = bot.move()
                         if shp.ship[i][j].contains_alien():
                             print(f"Dead: {T}")
                             avg_moves_to_save[botnum - 3][board][trial] += T
