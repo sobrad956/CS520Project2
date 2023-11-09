@@ -1,6 +1,7 @@
 import random
 import math
 import numpy as np
+import bot
 from queue import Queue
 
 
@@ -319,6 +320,8 @@ class Ship:
 
         def one_one_alien_beep_update(self, beep):
             #Beep is boolean, whether or not aliens were detected
+
+            #indices within detection square based on current location of the bot
             indices = self.get_det_sq_indicies()
 
             if beep:
@@ -335,21 +338,22 @@ class Ship:
                 
         
         def one_one_crew_beep_update(self, beep):
+            #This is all wrong
             #Beep is boolean
             if beep:
-                sum_array = np.copy(self.get_crew_probs)
-                sum_array *= exponent_term
-                sum = np.sum(sum_array)
-
-                self.crew_probs *= exponent_term
-                self.crew_probs /= sum
+                prob = lambda x: bot.get_beep_prob(0)
             else:
-                sum_array = np.copy(self.get_crew_probs)
-                sum_array *= (1 - exponent_term)
-                sum = np.sum(sum_array)
+                prob = lambda x: 1 - bot.get_beep_prob(0)
 
-                self.crew_probs *= (1 - exponent_term)
-                self.crew_probs /= sum
+
+
+            probs = prob(self.crew_probs)
+            sum_array = np.copy(self.get_crew_probs)
+            sum_array *= probs
+            sum = np.sum(sum_array)
+
+            self.crew_probs *=probs
+            self.crew_probs /= sum
 
             
 
@@ -370,8 +374,27 @@ class Ship:
             self.crew_probs /= crew_norm_factor
             self.alien_probs /= alien_norm_factor
 
+
         def one_one_alien_move_update(self):
-            pass
+            for i in range(self.D):
+                for j in range(self.D):
+                    p = 0
+                    
+                    if self.ship[i][j].is_open():
+                        #loop through adjacent cells
+                        if (i-1) > 0:
+                            p += ((self.alien_probs[i-1][j]) * (1/ self.open_neighbors[i-1][j]))
+                        if (i +1) < self.D -1:
+                            p += ((self.alien_probs[i+1][j]) * (1/ self.open_neighbors[i+1][j]))
+                        if(j-1) > 0:
+                            p += ((self.alien_probs[i][j-1]) * (1/ self.open_neighbors[i][j-1]))
+                        if(j+1) < self.D-1:
+                            p += ((self.alien_probs[i][j+1]) * (1/ self.open_neighbors[i][j+1]))
+                        self.set_alien_probs(i,j,p)
+
+
+
+
 
 
 
@@ -380,4 +403,66 @@ class Ship:
 
         #One Alien, Two Crew 
 
+        def one_two_crew_beep_update(self):
+            pass
+
+        def one_two_bot_move_update(self):
+            #This function applies when no alien or crew member was in the square we moved to
+
+            bot_loc = self.get_bot_loc()
+
+            #We know for sure alien in this square
+            self.set_alien_probs(bot_loc[0], bot_loc[1], 0)
+
+            #We know for sure no crew member in this square -> any pair containing this square has p = 0
+            
+
+
+            #Normalize the rest of the values
+            crew_norm_factor = np.sum(self.crew_pair_probs())
+            alien_norm_factor = np.sum(self.alien_probs())
+
+            self.crew__pair_probs /= crew_norm_factor
+            self.alien_probs /= alien_norm_factor
+
         #Two Alien, Two Crew
+
+        def two_two_alien_beep_update(self, beep):
+            #Beep is boolean, whether or not aliens were detected
+
+            #indices within detection square based on current location of the bot
+            indices = self.get_det_sq_indicies()
+
+            if beep:
+                #set probabilities outside the det sq to 0
+                #for all the pairs, if both are outside the detection square, probability = 0
+
+                pass
+              
+            else:
+                #for all pairs, if either is inside the detection square, probability = 0
+                pass
+                
+            #I think normalization is the same regardless since everything else went to 0
+            alien_norm_factor = np.sum(self.get_alien__pair_probs())
+            self.alien__pair_probs /= alien_norm_factor
+
+        def two_two_alien_move_update(self):
+            pass
+
+        def two_two_bot_move_update(self):
+            #This function applies when no alien or crew member was in the square we moved to
+
+            bot_loc = self.get_bot_loc()
+
+
+            #We know for sure no crew member or alien in this square -> any pair containing this square has p = 0
+            
+
+
+            #Normalize the rest of the values
+            crew_norm_factor = np.sum(self.crew_pair_probs())
+            alien_norm_factor = np.sum(self.alien_pair_probs())
+
+            self.crew__pair_probs /= crew_norm_factor
+            self.alien__pair_probs /= alien_norm_factor
