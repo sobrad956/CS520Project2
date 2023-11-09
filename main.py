@@ -225,7 +225,7 @@ def main(k):
     shp.generate_ship()
 
     i, j = shp.get_unoccupied_cell()
-    bot = Bot(i, j, k, shp, 1)
+    bot = Bot(i, j, k, shp, 1, 0.1)
 
     start_cells = []
     for num in range(crewnum):
@@ -238,10 +238,16 @@ def main(k):
 
     shp.distances_from_crew(start_cells)
     shp.print_ship()
-    print()
+    #print(shp.ship[0][0].distances)
+    print("Finished")
+    # for a in range(shp.D):
+    #     for b in range(shp.D):
+    #         #print(shp.ship[a][b].distances)
+    #     print(a)
 
-    print(bot.detect_alien())
-    print(bot.detect_crew(crewnum, 0.1))
+
+    #print(bot.detect_alien())
+    #print(bot.detect_crew(crewnum, 0.1))
 
 
 
@@ -308,4 +314,4 @@ def main(k):
 
 
 if __name__ == "__main__":
-    main(3)
+    main(1)

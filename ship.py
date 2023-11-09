@@ -15,18 +15,16 @@ class Cell:
         self.alien = False
         self.crew = False
         self.bot = False
-        self.distances = [-1, -1]  # distance from crew member for each crew member, negative if no crew or cell closed
+        #self.distances = [-1, -1]  # distance from crew member for each crew member, negative if no crew or cell closed
+
+        self.distances = np.asarray([[-1 for j in range(20)] for i in range(20)])
         #self.alien1_prob = 0
         #self.alien2_prob = 0
         #self.crew1_prob = 0
         #self.crew2_prob = 0
 
-
-    def get_distance(self, pos):
-        return self.distances[pos]
-
-    def set_distance(self, pos, dist):
-        self.distances[pos] = dist
+    def set_distance(self, row, col, dist):
+        self.distances[row][col] = dist
 
     # def get_crew1_prob(self):
     #     return self.crew1_prob
@@ -99,7 +97,7 @@ class Ship:
     """ This class is used to arrange cells in a grid to represent the ship and generate it at time T=0 """
     
     def __init__(self):
-        self.D = 7 # The dimension of the ship as a square
+        self.D = 20 # The dimension of the ship as a square
         self.ship = np.asarray([[Cell(i, j) for j in range(self.D)] for i in range(self.D)])  # creates a DxD 2D grid of closed cells
         self.bot_loc = [-1, -1]  # Stores the initial position of the bot, used to restrict alien generation cells
         self.crew_probs = np.asarray([[0 for j in range(self.D)] for i in range(self.D)])
@@ -252,15 +250,24 @@ class Ship:
 
     def distances_from_crew(self, start_cells):
         """ Finds the distance from every cell to the crew members """
+        start_cells = []
+        for start_i in range(self.D):
+            for start_j in range(self.D):
+                if self.ship[start_i][start_j].is_open():
+                    start_cells.append(self.ship[start_i][start_j])
+
+        print(len(start_cells))
         for i in range(0, len(start_cells)):
+            print(i)
             fringe = Queue()
             visited = []
             cur_state = (start_cells[i], 0)
             fringe.put(cur_state)
 
             while not fringe.empty():
+
                 cur_state = fringe.get()
-                cur_state[0].set_distance(i, cur_state[1])
+                cur_state[0].set_distance(start_cells[i].row, start_cells[i].col, cur_state[1])
                 visited.append(cur_state[0])
 
                 children = []
