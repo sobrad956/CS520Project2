@@ -69,9 +69,9 @@ class Bot:
                     return True
         return False
 
-    def get_beep_prob(self, crewnum):
+    def get_beep_prob(self, crewnum, row, col):
         #crewnum is the crew number's index
-        d = self.ship.ship[self.row][self.col].distances[crewnum]
+        d = self.ship.ship[row][col].distances[crewnum]
         prob = math.exp(-self.alpha * (d - 1))
         # print(prob)
         return prob
@@ -80,7 +80,7 @@ class Bot:
         """ Returns a beep with probability for each crew member based on distance """
         #numcrew is the total number of crew members
         for i in range(0, numcrew):
-            prob = self.get_beep_prob(i, self.alpha)
+            prob = self.get_beep_prob(i, self.alpha, self.row, self.col)
             if random.random() < prob:
                 return True
         return False
