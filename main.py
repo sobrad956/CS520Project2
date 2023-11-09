@@ -24,6 +24,7 @@ def experiment1(k, alphas):
                 for trial in range(numTrials):
                     i, j = shp.get_unoccupied_cell()
                     bot = Bot(i, j, k, shp, botnum, alpha)
+                    shp.bot = bot
 
                     start_cells = []
                     i, j = shp.get_unoccupied_cell()
@@ -234,6 +235,10 @@ def main(k):
 
     i, j = shp.get_unoccupied_cell()
     bot = Bot(i, j, k, shp, 1, 0.1)
+    shp.bot = bot
+    
+
+    
 
     start_cells = []
     for num in range(crewnum):
@@ -245,6 +250,7 @@ def main(k):
     alien = Alien(i, j, shp)
 
     shp.distances_from_crew()
+    shp.init_crew_prob_one()
     shp.print_ship()
     #print(shp.ship[0][0].distances)
     print("Finished")
@@ -256,7 +262,8 @@ def main(k):
 
     print(bot.detect_alien())
     print(bot.detect_crew(start_cells))
-
+    beep = bot.detect_crew(start_cells)
+    shp.one_one_crew_beep_update(beep)
 
 
 
