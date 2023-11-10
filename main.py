@@ -79,8 +79,8 @@ def experiment1(k, alphas):
     plt.ylabel('Average Number of Moves Needed to Rescue all Crew Members')
     plt.title('Average Number of Moves Needed to Rescue all Crew Members (One Alien, One Crew) vs Alpha')
     plt.legend(loc='best')
-    plt.savefig('experiment1_plot1.png')
-    np.save('experiment1_plot1.npy', avg_moves_to_save)
+    plt.savefig('experiment1/experiment1_plot1.png')
+    np.save('experiment1/experiment1_plot1.npy', avg_moves_to_save)
     plt.plot()
     plt.close()
 
@@ -90,8 +90,8 @@ def experiment1(k, alphas):
     plt.ylabel('Average Number of Crew Members Saved')
     plt.title('Average Number of Crew Members Saved (One Alien, One Crew) vs Alpha')
     plt.legend(loc='best')
-    plt.savefig('experiment1_plot2.png')
-    np.save('experiment1_plot2.npy', avg_crew_saved)
+    plt.savefig('experiment1/experiment1_plot2.png')
+    np.save('experiment1/experiment1_plot2.npy', avg_crew_saved)
     plt.plot()
     plt.close()
 
@@ -101,8 +101,8 @@ def experiment1(k, alphas):
     plt.ylabel('Probability of Successfully Saving all Crew Members')
     plt.title('Probability of Successfully Saving all Crew Members (One Alien, One Crew) vs Alpha')
     plt.legend(loc='best')
-    plt.savefig('experiment1_plot3.png')
-    np.save('experiment1_plot3.npy', prob_success)
+    plt.savefig('experiment1/experiment1_plot3.png')
+    np.save('experiment1/experiment1_plot3.npy', prob_success)
     plt.plot()
     plt.close()
 
@@ -129,7 +129,6 @@ def experiment2(k, alphas):
                         i, j = shp.get_unoccupied_cell()
                         shp.ship[i][j].add_crew()
                         start_cells.append(shp.ship[i][j])
-                        # shp.set_crew_loc(i, j) #DOESNT WORK WITH TWO CREW
 
                     i, j = shp.get_unoccupied_alien_cell(k)
                     alien = Alien(i, j, shp)
@@ -150,30 +149,61 @@ def experiment2(k, alphas):
                         # i, j = bot.move()
                         if shp.ship[i][j].contains_alien():
                             print(f"Dead: {T}")
-                            avg_moves_to_save[botnum - 3][board][trial] += T
+                            avg_moves_to_save[botnum - 3][board][trial] += T / (numBoards * numTrials)
                             break
-                        # THIS NEEDS AN UPDATE TO ACCOUNT FOR THERE BEING TWO CREW
                         if shp.ship[i][j].contains_crew():
                             print(f"Saved: {T}")
-                            avg_crew_saved[botnum - 3][board][trial] += 1
+                            avg_crew_saved[botnum - 3][board][trial] += 1 / (numBoards * numTrials)
                             shp.ship[i][j].remove_crew()
-                            i, j = shp.get_unoccupied_cell(True)
-                            shp.ship[i][j].add_crew()
-                            shp.set_crew_loc(i, j)
-                        # alien moves random.shuffle(aliens)
-                        if shp.ship[i][j].contains_bot():
+                            start_cells.remove(shp.ship[i][j])
+                            saved_counter += 1
+                            if saved_counter == 2:
+                                prob_success[botnum - 3][a] += 1 / (numBoards * numTrials)
+                                break
+                        if alien.move():
                             print(f"Dead: {T}")
-                            avg_moves_to_save[botnum - 3][board][trial] += T
+                            avg_moves_to_save[botnum - 3][a] += T / (numBoards * numTrials)
+                            flag = False
                             break
-                        # detect alien
-                        # detect crew
                         T += 1
-                        if T >= 1000:
-                            avg_moves_to_save[botnum - 3][board][trial] += T
                     shp.empty_ship()
-    print(avg_moves_to_save)
-    print()
-    print(avg_crew_saved)
+
+    alphas = [str(x) for x in alphas]
+    plt.plot(alphas, avg_moves_to_save[0], label='Bot 1')
+    plt.plot(alphas, avg_moves_to_save[1], label='Bot 2')
+    plt.plot(alphas, avg_moves_to_save[2], label='Bot 3')
+    plt.xlabel('Value for alpha')
+    plt.ylabel('Average Number of Moves Needed to Rescue all Crew Members')
+    plt.title('Average Number of Moves Needed to Rescue all Crew Members (One Alien, Two Crew) vs Alpha')
+    plt.legend(loc='best')
+    plt.savefig('experiment2/experiment2_plot1.png')
+    np.save('experiment2/experiment2_plot1.npy', avg_moves_to_save)
+    plt.plot()
+    plt.close()
+
+    plt.plot(alphas, avg_crew_saved[0], label='Bot 1')
+    plt.plot(alphas, avg_crew_saved[1], label='Bot 2')
+    plt.plot(alphas, avg_crew_saved[2], label='Bot 3')
+    plt.xlabel('Value for alpha')
+    plt.ylabel('Average Number of Crew Members Saved')
+    plt.title('Average Number of Crew Members Saved (One Alien, Two Crew) vs Alpha')
+    plt.legend(loc='best')
+    plt.savefig('experiment2/experiment2_plot2.png')
+    np.save('experiment2/experiment2_plot2.npy', avg_crew_saved)
+    plt.plot()
+    plt.close()
+
+    plt.plot(alphas, prob_success[0], label='Bot 1')
+    plt.plot(alphas, prob_success[1], label='Bot 2')
+    plt.plot(alphas, prob_success[2], label='Bot 3')
+    plt.xlabel('Value for alpha')
+    plt.ylabel('Probability of Successfully Saving all Crew Members')
+    plt.title('Probability of Successfully Saving all Crew Members (One Alien, One Crew) vs Alpha')
+    plt.legend(loc='best')
+    plt.savefig('experiment2/experiment2_plot3.png')
+    np.save('experiment2/experiment2_plot3.npy', prob_success)
+    plt.plot()
+    plt.close()
 
 
 def experiment3():
@@ -230,7 +260,7 @@ def experiment3():
 
 def main(k):
     crewnum = 2
-    shp = Ship(3)
+    shp = Ship(k)
     shp.generate_ship()
 
     i, j = shp.get_unoccupied_cell()
