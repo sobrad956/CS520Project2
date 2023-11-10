@@ -147,46 +147,39 @@ class Bot:
     def bot2_move(self):
         # Replace this to pick adjacent square w/ highest prob
 
-        prob_array = self.ship.get_crew_probs()
         next_move = 10
         cur_row = self.row
         cur_col = self.col
 
-        up_crew_prob = 0
-        down_crew_prob = 0
-        left_crew_prob = 0
-        right_crew_prob = 0
-
-        if cur_row > 0:
-            up_crew_prob = prob_array[cur_row-1,cur_col]
-            up_alien_prob = self.ship.get_alien_probs()[cur_row-1,cur_col]
+        if cur_row > 0 and self.ship.ship[cur_row - 1][cur_col].is_open():
+            up_crew_prob = self.ship.get_crew_probs()[cur_row - 1][cur_col]
+            up_alien_prob = self.ship.get_alien_probs()[cur_row - 1][cur_col]
         else:
             up_crew_prob = -1
             up_alien_prob = 100
-        
-        if cur_row < self.ship.D - 1:
-            down_crew_prob = prob_array[cur_row+1,cur_col]
-            down_alien_prob = self.ship.get_alien_probs()[cur_row+1,cur_col]
+
+        if cur_row < self.ship.D - 1 and self.ship.ship[cur_row + 1][cur_col].is_open():
+            down_crew_prob = self.ship.get_crew_probs()[cur_row + 1][cur_col]
+            down_alien_prob = self.ship.get_alien_probs()[cur_row + 1][cur_col]
         else:
             down_crew_prob = -1
             down_alien_prob = 100
 
-        if cur_col > 0:
-            left_crew_prob = prob_array[cur_row,cur_col-1]
-            left_alien_prob = self.ship.get_alien_probs()[cur_row,cur_col-1]
+        if cur_col > 0 and self.ship.ship[cur_row][cur_col - 1].is_open():
+            left_crew_prob = self.ship.get_crew_probs()[cur_row][cur_col - 1]
+            left_alien_prob = self.ship.get_alien_probs()[cur_row][cur_col - 1]
         else:
             left_crew_prob = -1
             left_alien_prob = 100
-        
-        if cur_col < self.ship.D-1:
-            right_crew_prob = prob_array[cur_row,cur_col+1]
-            right_alien_prob = self.ship.get_alien_probs()[cur_row,cur_col+1]
+
+        if cur_col < self.ship.D - 1 and self.ship.ship[cur_row][cur_col + 1].is_open():
+            right_crew_prob = self.ship.get_crew_probs()[cur_row][cur_col + 1]
+            right_alien_prob = self.ship.get_alien_probs()[cur_row][cur_col + 1]
         else:
             right_crew_prob = -1
             right_alien_prob = 100
 
-
-        crew_probs  = [left_crew_prob, right_crew_prob, up_crew_prob, down_crew_prob]
+        crew_probs = [left_crew_prob, right_crew_prob, up_crew_prob, down_crew_prob]
         alien_probs = [left_alien_prob, right_alien_prob, up_alien_prob, down_alien_prob]
 
         max_idx = crew_probs.index(max(crew_probs))
