@@ -143,6 +143,57 @@ class Bot:
             self.move_down()
         else:
             pass  # Do nothing
+    def bot2_move(self):
+        # Replace this to pick adjacent square w/ highest prob
+    
+        next_move = 10
+        cur_row = self.row
+        cur_col = self.col
+
+        if cur_row > 0:
+            up_crew_prob = self.ship.get_crew_probs()[cur_row-1][cur_col]
+            up_alien_prob = self.ship.get_alien_probs()[cur_row-1][cur_col]
+        else:
+            up_crew_prob = -1
+            up_alien_prob = 100
+        
+        if cur_row < self.ship.D - 1:
+            down_crew_prob = self.ship.get_crew_probs()[cur_row+1][cur_col]
+            down_alien_prob = self.ship.get_alien_probs()[cur_row+1][cur_col]
+        else:
+            down_crew_prob = -1
+            down_alien_prob = 100
+
+        if cur_col > 0:
+            left_crew_prob = self.ship.get_crew_probs()[cur_row][cur_col-1]
+            left_alien_prob = self.ship.get_alien_probs()[cur_row][cur_col-1]
+        else:
+            left_crew_prob = -1
+            left_alien_prob = 100
+        
+        if cur_col < self.ship.D-1:
+            right_crew_prob = self.ship.get_crew_probs()[cur_row][cur_col+1]
+            right_alien_prob = self.ship.get_alien_probs()[cur_row][cur_col+1]
+        else:
+            right_crew_prob = -1
+            right_alien_prob = 100
+
+
+        crew_probs  = [left_crew_prob, right_crew_prob, up_crew_prob, down_crew_prob]
+        alien_probs = [left_alien_prob, right_alien_prob, up_alien_prob, down_alien_prob]
+
+        max_idx = crew_probs.index(max(crew_probs))
+        next_move = max_idx
+        if next_move == 0:
+            self.move_left()
+        elif next_move == 1:
+            self.move_right()
+        elif next_move == 2:
+            self.move_up()
+        elif next_move == 3:
+            self.move_down()
+        else:
+            pass  # Do nothing
 
     # Get square within bounds of ship within detection region:
     #(x[max(i - k, 0):min(i + k + 1, 3), max(j - k, 0):min(j + k + 1, 3)])
