@@ -19,40 +19,10 @@ class Cell:
         self.crew = False
         self.bot = False
         self.d = d
-        #self.distances = [-1, -1]  # distance from crew member for each crew member, negative if no crew or cell closed
-
         self.distances = np.asarray([[-1 for j in range(self.d)] for i in range(self.d)])
-        #self.alien1_prob = 0
-        #self.alien2_prob = 0
-        #self.crew1_prob = 0
-        #self.crew2_prob = 0
 
     def set_distance(self, row, col, dist):
         self.distances[row][col] = dist
-
-    # def get_crew1_prob(self):
-    #     return self.crew1_prob
-    #
-    # def set_crew1_prob(self, p):
-    #     self.crew1_prob = p
-    #
-    # def get_crew2_prob(self):
-    #     return self.crew2_prob
-    #
-    # def set_crew2_prob(self, p):
-    #     self.crew2_prob = p
-    #
-    # def get_alien1_prob(self):
-    #     return self.alien1_prob
-    #
-    # def set_alien1_prob(self, p):
-    #     self.alien1_prob = p
-    #
-    # def get_alien2_prob(self):
-    #     return self.alien2_prob
-    #
-    # def set_alien2_prob(self, p):
-    #     self.alien2_prob = p
 
     def get_location(self):
         return self.row, self.col
@@ -101,7 +71,7 @@ class Ship:
     """ This class is used to arrange cells in a grid to represent the ship and generate it at time T=0 """
     
     def __init__(self, k):
-        self.D = 12 # The dimension of the ship as a square
+        self.D = 5  # The dimension of the ship as a square
         self.ship = np.asarray([[Cell(i, j, self.D) for j in range(self.D)] for i in range(self.D)])  # creates a DxD 2D grid of closed cells
         self.bot_loc = [-1, -1]  # Stores the initial position of the bot, used to restrict alien generation cells
         self.crew_probs = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])
@@ -113,13 +83,13 @@ class Ship:
 
     def get_crew_probs(self):
         return self.crew_probs
-    #
+
     def get_alien_probs(self):
         return self.alien_probs
-    #
+
     def set_crew_probs(self, i, j, p):
         self.crew_probs[i][j] = p
-    #
+
     def set_alien_probs(self, i, j, p):
         self.alien_probs[i][j] = p
 
@@ -313,7 +283,7 @@ class Ship:
 
     def init_crew_prob_one(self):
         p = 1 / (self.num_open_cells - 1)
-        mask_func = lambda x: x.is_open() and not x.bot
+        mask_func = lambda x: x.is_open() and not x.contains_bot()
         mask = np.asarray([list(map(mask_func, row)) for row in self.ship])
 
         #temp = np.asarray([[random.random() for i in range(12)] for j in range(12)])
@@ -322,7 +292,7 @@ class Ship:
     
     def init_alien_prob_one(self):
         det_sq = self.get_sensor_region(self.bot_loc[0], self.bot_loc[1])
-        count = 0
+        count = -1
         for row in det_sq:
             for elem in row:
                 if elem.is_open():
@@ -350,7 +320,7 @@ class Ship:
         #return array of the indices within the detection square
         cent = self.bot_loc
         x = []
-        y =[]
+        y = []
 
         for i in range(cent[0]-(self.k), cent[0]+(self.k)+1):
             for j in range(cent[1]-(self.k), cent[1]+(self.k)+1):
@@ -460,6 +430,17 @@ class Ship:
                     if(j+1) < self.D-1:
                         p += ((self.alien_probs[i][j+1]) * (1/ self.open_neighbors[i][j+1]))
                     self.set_alien_probs(i,j,p)
+
+
+
+
+
+
+
+
+
+
+
 
     #One Alien, Two Crew 
 

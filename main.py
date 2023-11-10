@@ -271,16 +271,15 @@ def experiment3():
 
 
 def main(k):
-    crewnum = 2
+    desired_width = 7*7*2
+    np.set_printoptions(linewidth=desired_width)
+    crewnum = 1
     shp = Ship(k)
     shp.generate_ship()
 
     i, j = shp.get_unoccupied_cell()
     bot = Bot(i, j, k, shp, 1, 0.1)
     shp.bot = bot
-    
-
-    
 
     start_cells = []
     for num in range(crewnum):
@@ -291,22 +290,59 @@ def main(k):
     i, j = shp.get_unoccupied_alien_cell(k)
     alien = Alien(i, j, shp)
 
+    print("INIT")
     shp.distances_from_crew()
     shp.init_crew_prob_one()
+    print(shp.get_crew_probs())
+    print()
     shp.init_alien_prob_one()
+    print(shp.get_alien_probs())
+    print()
     shp.print_ship()
-    #print(shp.ship[0][0].distances)
-    print("Finished")
-    # for a in range(shp.D):
-    #     for b in range(shp.D):
-    #         #print(shp.ship[a][b].distances)
-    #     print(a)
+    print()
+    print("BOT MOVES")
+    bot.bot1_move()
+    shp.print_ship()
+    print()
+    shp.one_one_bot_move_update()
+    print(shp.get_crew_probs())
+    print()
+    print(shp.get_alien_probs())
+    print()
+    print("ALIEN MOVES")
+    alien.move()
+    shp.print_ship()
+    print()
+    shp.one_one_alien_move_update()
+    print(shp.get_crew_probs())
+    print()
+    print(shp.get_alien_probs())
+    print()
+    print("ALIEN BEEP UPDATE")
+    alien_beep = bot.detect_alien()
+    print(alien_beep)
+    shp.one_one_alien_beep_update(alien_beep)
+    print(shp.get_crew_probs())
+    print()
+    print(shp.get_alien_probs())
+    print()
+    print("CREW BEEP UPDATE")
+    crew_beep = bot.detect_crew(start_cells)
+    print(crew_beep)
+    shp.one_one_crew_beep_update(crew_beep)
+    print(shp.get_crew_probs())
+    print()
+    print(shp.get_alien_probs())
+    print()
 
 
-    print(bot.detect_alien())
-    print(bot.detect_crew(start_cells))
-    beep = bot.detect_crew(start_cells)
-    shp.one_one_crew_beep_update(beep)
+
+
+
+    #print(bot.detect_alien())
+    #print(bot.detect_crew(start_cells))
+    #beep = bot.detect_crew(start_cells)
+    #shp.one_one_crew_beep_update(beep)
 
 
 
@@ -372,4 +408,5 @@ def main(k):
 
 
 if __name__ == "__main__":
-    experiment1(1, [0.2])
+    main(1)
+    #experiment1(1, [0.2])
