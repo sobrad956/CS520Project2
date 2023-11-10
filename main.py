@@ -37,8 +37,8 @@ def experiment1(k, alphas):
                     shp.print_ship()
                     shp.distances_from_crew()
                     shp.init_crew_prob_one()
-
-                    print(shp.get_crew_probs())
+                    print("init: ", shp.get_crew_probs())
+                    print()
                     shp.init_alien_prob_one()
                     print("Calculated distances")
 
@@ -47,9 +47,9 @@ def experiment1(k, alphas):
                     T = 0
                     flag = True
                     while flag:
-                        if T > 2:
+                        if T > 3:
                             break
-                        bot.bot2_move()
+                        bot.bot1_move()
                         shp.print_ship()
                         print()
                         i = bot.row
@@ -68,6 +68,8 @@ def experiment1(k, alphas):
                             flag = False
                             break
                         shp.one_one_bot_move_update()
+                        #print("bot move: ", shp.get_crew_probs())
+                        print()
                         if alien.move():
                             print(f"Dead: {T}")
                             avg_moves_to_save[botnum - 1][a] += T / (numBoards * numTrials)
@@ -76,6 +78,9 @@ def experiment1(k, alphas):
                         shp.one_one_alien_move_update()
                         shp.one_one_alien_beep_update(bot.detect_alien())
                         shp.one_one_crew_beep_update(bot.detect_crew(start_cells))
+                        #print("crew: ", shp.get_crew_probs())
+                        print()
+
                         T += 1
                     shp.empty_ship()
 
@@ -367,4 +372,4 @@ def main(k):
 
 
 if __name__ == "__main__":
-    experiment1(1, [0.5])
+    experiment1(1, [0.2])

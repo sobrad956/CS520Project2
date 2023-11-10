@@ -315,6 +315,9 @@ class Ship:
         p = 1 / (self.num_open_cells - 1)
         mask_func = lambda x: x.is_open() and not x.bot
         mask = np.asarray([list(map(mask_func, row)) for row in self.ship])
+
+        #temp = np.asarray([[random.random() for i in range(12)] for j in range(12)])
+        #self.crew_probs[mask] = temp[mask]
         self.crew_probs[mask] = p
     
     def init_alien_prob_one(self):
@@ -335,6 +338,7 @@ class Ship:
         mask[x,y] = False
 
         self.alien_probs[mask] = p
+
 
 
 

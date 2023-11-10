@@ -91,6 +91,8 @@ class Bot:
         cur_row = self.row
         cur_col = self.col
 
+        print(self.ship.get_alien_probs())
+
         if cur_row > 0 and self.ship.ship[cur_row-1][cur_col].is_open():
             up_crew_prob = self.ship.get_crew_probs()[cur_row-1][cur_col]
             up_alien_prob = self.ship.get_alien_probs()[cur_row-1][cur_col]
@@ -120,26 +122,30 @@ class Bot:
             right_alien_prob = 100
 
 
-        crew_probs  = [left_crew_prob, right_crew_prob, up_crew_prob, down_crew_prob]
+        crew_probs  = [up_crew_prob, down_crew_prob, left_crew_prob, right_crew_prob ]
         alien_probs = [left_alien_prob, right_alien_prob, up_alien_prob, down_alien_prob]
 
         max_idx = crew_probs.index(max(crew_probs))
-
+        i =1
         while(next_move == 10):
+            print(i)
+            i+=1
             if 0 not in alien_probs:
+                print("no safe move")
+                #print(self.ship.get_alien_probs())
                 next_move = 100
             elif alien_probs[max_idx] == 0:
                 next_move = max_idx
             else:
                 crew_probs[max_idx] = -1
                 max_idx = crew_probs.index(max(crew_probs))
-        if next_move == 0:
+        if next_move == 2:
             self.move_left()
-        elif next_move == 1:
-            self.move_right()
-        elif next_move == 2:
-            self.move_up()
         elif next_move == 3:
+            self.move_right()
+        elif next_move == 0:
+            self.move_up()
+        elif next_move == 1:
             self.move_down()
         else:
             pass  # Do nothing
