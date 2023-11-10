@@ -101,7 +101,7 @@ class Ship:
     """ This class is used to arrange cells in a grid to represent the ship and generate it at time T=0 """
     
     def __init__(self, k):
-        self.D = 7 # The dimension of the ship as a square
+        self.D = 12 # The dimension of the ship as a square
         self.ship = np.asarray([[Cell(i, j, self.D) for j in range(self.D)] for i in range(self.D)])  # creates a DxD 2D grid of closed cells
         self.bot_loc = [-1, -1]  # Stores the initial position of the bot, used to restrict alien generation cells
         self.crew_probs = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])
@@ -313,7 +313,30 @@ class Ship:
         self.crew_probs[mask] = p
     
     def init_alien_prob_one(self):
-        pass
+        det_sq = self.get_sensor_region(self.bot_loc[0], self.bot_loc[1])
+        count = 0
+        for row in det_sq:
+            for elem in row:
+                if elem.is_open():
+                    count += 1
+        num_open_out = self.num_open_cells - count
+        p = 1 / num_open_out
+        
+        mask_func = lambda x: x.is_open()
+        mask = np.asarray([list(map(mask_func, row)) for row in self.ship])
+
+    
+        print(mask)
+        print(p)
+        x,y = self.get_det_sq_indicies()
+        mask[x,y] = False
+        print(mask)
+
+        self.alien_probs[mask] = p
+        print("here")
+        print(np.sum(self.alien_probs))
+
+
 
 
 
@@ -322,14 +345,30 @@ class Ship:
     def get_det_sq_indicies(self):
         #return array of the indices within the detection square
         cent = self.bot_loc
-        indices = []
+        x = []
+        y =[]
 
-        for i in range(self.bot_loc[0]-(self.k+1), self.bot_loc[0]+(self.k+1)):
-            for j in range(self.bot_loc[1]-(self.k+1), self.bot_loc[1]+(self.k+1)):
-                if i > 0 and i < self.D-1:
-                    if j > 0 and j < self.D-1:
-                        indices.append((i,j))
+        for i in range(cent[0]-(self.k), cent[0]+(self.k)+1):
+            for j in range(cent[1]-(self.k), cent[1]+(self.k)+1):
+                if i >= 0 and i < self.D-1:
+                    if j >= 0 and j < self.D-1:
+                        x.append(i)
+                        y.append(j)
+        return x,y
+    
+    def get_out_det_sq_indicies(self):
 
+        cent = self.bot_loc
+        x = []
+        y = []
+
+        for i in range(self.D):
+            for j in range(self.D):
+                if not (i in range(cent[0]-(self.k), cent[0]+(self.k)+1)):
+                    if not (j in range(cent[1]-(self.k), cent[1]+(self.k)+1)):
+                        x.append(i)
+                        y.append(j)
+        return x,y
 
     #One Alien, One Crew 
 
@@ -337,15 +376,16 @@ class Ship:
         #Beep is boolean, whether or not aliens were detected
 
         #indices within detection square based on current location of the bot
-        indices = self.get_det_sq_indicies()
+        x_in,y_in = self.get_det_sq_indicies()
+        x_out, y_out = self.get_out_det_sq_indicies()
 
         if beep:
             #set probabilities outside the det sq to 0
-            self.alien_probs[not indices] = 0
+            self.alien_probs[x_out, y_out] = 0
             
         else:
             #set probabilities inside the det sq to 0
-            self.alien_probs[indices] = 0
+            self.alien_probs[x_in,y_in] = 0
             
         #I think normalization is the same regardless since everything else went to 0
         alien_norm_factor = np.sum(self.get_alien_probs())
@@ -449,7 +489,7 @@ class Ship:
         #Beep is boolean, whether or not aliens were detected
 
         #indices within detection square based on current location of the bot
-        indices = self.get_det_sq_indicies()
+        x,y = self.get_det_sq_indicies()
 
         if beep:
             #set probabilities outside the det sq to 0

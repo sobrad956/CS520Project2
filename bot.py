@@ -58,7 +58,7 @@ class Bot:
 
     def get_sensor_region(self, i, j):
         """ Returns the cells within the alien sensor region """
-        return self.ship.get_sensor_region(self.row, self.col, self.k)
+        return self.ship.get_sensor_region(self.row, self.col)
 
     def detect_alien(self):
         """ Returns True if an alien is in the sensor region, False otherwise """
@@ -84,17 +84,62 @@ class Bot:
                 return True
         return False
 
-    def move(self, move_seq):
+    def bot1_move(self):
         # Replace this to pick adjacent square w/ highest prob
-        moves = [1, 2, 3, 4, 5]
-        next_move = random.choice(moves)
-        if next_move == 1:
+    
+        next_move = 10
+        cur_row = self.row
+        cur_col = self.col
+
+        if cur_row > 0:
+            up_crew_prob = self.ship.get_crew_probs(cur_row-1, cur_col)
+            up_alien_prob = self.ship.get_alien_probs(cur_row-1, cur_col)
+        else:
+            up_crew_prob = -1
+            up_alien_prob = 100
+        
+        if cur_row <= self.ship.D:
+            down_crew_prob = self.ship.get_crew_probs(cur_row+1, cur_col)
+            down_alien_prob = self.ship.get_alien_probs(cur_row+1, cur_col)
+        else:
+            down_crew_prob = -1
+            down_alien_prob = 100
+
+        if cur_col > 0:
+            left_crew_prob = self.ship.get_crew_probs(cur_row, cur_col-1)
+            left_alien_prob = self.ship.get_alien_probs(cur_row, cur_col-1)
+        else:
+            left_crew_prob = -1
+            left_alien_prob = 100
+        
+        if cur_col <= self.ship.D:
+            right_crew_prob = self.ship.get_crew_probs(cur_row, cur_col+1)
+            right_alien_prob = self.ship.get_alien_probs(cur_row, cur_col+1)
+        else:
+            right_crew_prob = -1
+            right_alien_prob = 100
+
+
+        crew_probs  = [left_crew_prob, right_crew_prob, up_crew_prob, down_crew_prob]
+        alien_probs = [left_alien_prob, right_alien_prob, up_alien_prob, down_alien_prob]
+
+        max_idx = crew_probs.index(max(crew_probs))
+
+        while(next_move == 10):
+            if 0 not in alien_probs:
+                next_move = 100
+            elif alien_probs[max_idx] == 0:
+                next_move = max_idx
+            else:
+                crew_probs[max_idx] = -1
+                max_idx = crew_probs.index(max(crew_probs))
+        if next_move == 0:
             self.move_left()
-        elif next_move == 2:
+        elif next_move == 1:
             self.move_right()
-        elif next_move == 3:
+        elif next_move == 2:
             self.move_up()
-        elif next_move == 4:
+        elif next_move == 3:
             self.move_down()
         else:
             pass  # Do nothing
