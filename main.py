@@ -9,9 +9,9 @@ from bot import Bot
 
 
 def experiment1(k, alphas):
-    numBoards = 30
-    numTrials = 10
-    bots = [1, 2]
+    numBoards = 1
+    numTrials = 1
+    bots = [1]
     avg_crew_saved = np.zeros((2, len(alphas)))
     avg_moves_to_save = np.zeros((2, len(alphas)))
     prob_success = np.zeros((2, len(alphas)))
@@ -36,21 +36,18 @@ def experiment1(k, alphas):
 
                     shp.print_ship()
                     shp.distances_from_crew()
+                    shp.init_crew_prob_one()
+                    shp.init_alien_prob_one()
                     print("Calculated distances")
-
-                    #Initialize ship probabilities
 
                     shp.print_ship()
                     print('Board:', board, ' Botnum:', botnum, ' Trial:', trial)
                     T = 0
                     flag = True
                     while flag:
-                        #aliendetected = bot.detect_alien()
-                        #crewbeep = bot.detect_crew(1, alpha)
-
-                        #Update probabilities
-
-                        #i, j = bot.move()
+                        bot.bot1_move()
+                        i = bot.row
+                        j = bot.col
 
                         if shp.ship[i][j].contains_alien():
                             print(f"Dead: {T}")
@@ -64,11 +61,15 @@ def experiment1(k, alphas):
                             shp.ship[i][j].remove_crew()
                             flag = False
                             break
+                        shp.one_one_bot_move_update()
                         if alien.move():
                             print(f"Dead: {T}")
                             avg_moves_to_save[botnum - 1][a] += T / (numBoards * numTrials)
                             flag = False
                             break
+                        shp.one_one_alien_move_update()
+                        shp.one_one_alien_beep_update(bot.detect_alien())
+                        shp.one_one_crew_beep_update(bot.detect_crew(start_cells))
                         T += 1
                     shp.empty_ship()
 
@@ -281,6 +282,7 @@ def main(k):
 
     shp.distances_from_crew()
     shp.init_crew_prob_one()
+    shp.init_alien_prob_one()
     shp.print_ship()
     #print(shp.ship[0][0].distances)
     print("Finished")
@@ -359,4 +361,4 @@ def main(k):
 
 
 if __name__ == "__main__":
-    main(1)
+    experiment1(1, [0.1])

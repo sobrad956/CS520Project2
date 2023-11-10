@@ -92,29 +92,29 @@ class Bot:
         cur_col = self.col
 
         if cur_row > 0:
-            up_crew_prob = self.ship.get_crew_probs(cur_row-1, cur_col)
-            up_alien_prob = self.ship.get_alien_probs(cur_row-1, cur_col)
+            up_crew_prob = self.ship.get_crew_probs()[cur_row-1][cur_col]
+            up_alien_prob = self.ship.get_alien_probs()[cur_row-1][cur_col]
         else:
             up_crew_prob = -1
             up_alien_prob = 100
         
-        if cur_row <= self.ship.D:
-            down_crew_prob = self.ship.get_crew_probs(cur_row+1, cur_col)
-            down_alien_prob = self.ship.get_alien_probs(cur_row+1, cur_col)
+        if cur_row < self.ship.D - 1:
+            down_crew_prob = self.ship.get_crew_probs()[cur_row+1][cur_col]
+            down_alien_prob = self.ship.get_alien_probs()[cur_row+1][cur_col]
         else:
             down_crew_prob = -1
             down_alien_prob = 100
 
         if cur_col > 0:
-            left_crew_prob = self.ship.get_crew_probs(cur_row, cur_col-1)
-            left_alien_prob = self.ship.get_alien_probs(cur_row, cur_col-1)
+            left_crew_prob = self.ship.get_crew_probs()[cur_row][cur_col-1]
+            left_alien_prob = self.ship.get_alien_probs()[cur_row][cur_col-1]
         else:
             left_crew_prob = -1
             left_alien_prob = 100
         
-        if cur_col <= self.ship.D:
-            right_crew_prob = self.ship.get_crew_probs(cur_row, cur_col+1)
-            right_alien_prob = self.ship.get_alien_probs(cur_row, cur_col+1)
+        if cur_col < self.ship.D-1:
+            right_crew_prob = self.ship.get_crew_probs()[cur_row][cur_col+1]
+            right_alien_prob = self.ship.get_alien_probs()[cur_row][cur_col+1]
         else:
             right_crew_prob = -1
             right_alien_prob = 100

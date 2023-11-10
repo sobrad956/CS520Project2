@@ -109,6 +109,7 @@ class Ship:
         self.k = k
         self.bot = None
         self.num_open_cells = None
+        self.open_neighbors = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])
 
     def get_crew_probs(self):
         return self.crew_probs
@@ -156,6 +157,7 @@ class Ship:
     def one_neighbor(self, i, j):
         """ If the given cell has more than 1 open neighbor, returns False, otherwise returns True """
         neighbors = 0
+
         if i > 0:  # If not in top row, check neighbor above
             up = self.ship[i-1][j]
             if up.is_open():
@@ -172,6 +174,7 @@ class Ship:
             right = self.ship[i][j+1]
             if right.is_open():
                 neighbors += 1
+        self.open_neighbors[i][j] = neighbors
         if neighbors == 1:
             return True
         else:
@@ -438,8 +441,8 @@ class Ship:
 
         #Normalize the rest of the values
 
-        crew_norm_factor = np.sum(self.crew_probs())
-        alien_norm_factor = np.sum(self.alien_probs())
+        crew_norm_factor = np.sum(self.crew_probs)
+        alien_norm_factor = np.sum(self.alien_probs)
 
         self.crew_probs /= crew_norm_factor
         self.alien_probs /= alien_norm_factor
