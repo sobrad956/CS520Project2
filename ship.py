@@ -269,7 +269,6 @@ class Ship:
                 if self.ship[start_i][start_j].is_open():
                     start_cells.append(self.ship[start_i][start_j])
 
-        print(len(start_cells))
         self.num_open_cells = len(start_cells)
         for i in range(0, len(start_cells)):
             print(i)
@@ -332,15 +331,10 @@ class Ship:
         mask = np.asarray([list(map(mask_func, row)) for row in self.ship])
 
     
-        print(mask)
-        print(p)
         x,y = self.get_det_sq_indicies()
         mask[x,y] = False
-        print(mask)
 
         self.alien_probs[mask] = p
-        print("here")
-        print(np.sum(self.alien_probs))
 
 
 
@@ -419,8 +413,6 @@ class Ship:
         sum_array = copy.deepcopy(self.crew_probs)
         sum_array = np.multiply(sum_array, probs)
         sum = np.sum(sum_array)
-        print(sum)
-
         #Numerator
         self.crew_probs = np.multiply(self.crew_probs, probs)
 

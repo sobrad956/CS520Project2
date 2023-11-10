@@ -37,6 +37,8 @@ def experiment1(k, alphas):
                     shp.print_ship()
                     shp.distances_from_crew()
                     shp.init_crew_prob_one()
+
+                    print(shp.get_crew_probs())
                     shp.init_alien_prob_one()
                     print("Calculated distances")
 
@@ -45,7 +47,11 @@ def experiment1(k, alphas):
                     T = 0
                     flag = True
                     while flag:
-                        bot.bot1_move()
+                        if T > 2:
+                            break
+                        bot.bot2_move()
+                        shp.print_ship()
+                        print()
                         i = bot.row
                         j = bot.col
 
@@ -361,4 +367,4 @@ def main(k):
 
 
 if __name__ == "__main__":
-    experiment1(1, [0.1])
+    experiment1(1, [0.5])
