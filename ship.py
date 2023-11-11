@@ -230,7 +230,7 @@ class Ship:
                             self.ship[row][col].open_n.append((row,col-1))
                     if(col < self.D -1):
                         if self.ship[row][col+1].is_open():
-                            self.ship[row][col+1].open_n.append((row, col+1))
+                            self.ship[row][col].open_n.append((row, col+1))
                     
 
     def generate_ship(self):
@@ -460,32 +460,61 @@ class Ship:
             coords = list(combinations(mask_trues, 2))
         return coords
 
+
+    def open_cell_indices_in_sensor(self, repeat):
+        mask_func = lambda x: x.is_open()
+        mask = np.asarray([list(map(mask_func, row)) for row in self.get_sensor_region(self.bot.row, self.bot.col)])
+        mask_trues = np.array(np.where(mask==True)).T
+        if repeat:
+            coords = list(combinations_with_replacement(mask_trues, 2))
+        else:
+            coords = list(combinations(mask_trues, 2))
+        return coords
+
+    
+
     def init_crew_prob_two(self):
         p = 1/(math.comb(self.num_open_cells, 2) - (self.num_open_cells - 1))
         coords = self.open_cell_indices(False)
         for pair in coords:
-            self.two_crew_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p
+            self.two_crew_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p/2
+            self.two_crew_prob[pair[1][0], pair[1][1], pair[0][0], pair[0][1]] = p/2
             
-        print(p)
-        print("sum of crew pair probs", np.sum(self.two_crew_prob))
+        #print("p two crew: ", p)
+        #print("sum of crew pair probs", np.sum(self.two_crew_prob))
+
+    def saved_crew_prob_update(self):
+
+        saved_row = self.bot.get_row()
+        saved_col = self.bot.get_col()
+
+        ind_prob_one = self.two_crew_prob[saved_row, saved_col]
+        ind_prob_two = self.two_crew_prob[:,:,saved_row, saved_col]
+        
+        new_probs = ind_prob_one + ind_prob_two
+
+        new_probs /= np.sum(new_probs)
+
+        self.crew_probs = new_probs
 
 
     def one_two_crew_beep_update(self, beep): 
         if beep:
             coords = self.open_cell_indices(False)
-            probs = [self.bot.get_beep_prob_two(x[0][0],x[0][1], x[1][0], x[0][1]) * self.two_crew_prob[x[0][0],x[0][1], x[1][0], x[0][1]] for x in coords]
+            probs = [self.bot.get_beep_prob_two(x[0][0],x[0][1], x[1][0], x[1][1]) * self.two_crew_prob[x[0][0],x[0][1], x[1][0], x[1][1]] + self.bot.get_beep_prob_two(x[1][0],x[1][1], x[0][0], x[0][1]) * self.two_crew_prob[x[1][0],x[1][1], x[0][0], x[0][1]] for x in coords]
         else:
             coords = self.open_cell_indices(False)
-            probs = [self.bot.get_beep_prob_two(x[0][0],x[0][1], x[1][0], x[0][1]) * (1 - self.two_crew_prob[x[0][0],x[0][1], x[1][0], x[0][1]]) for x in coords]
+            probs = [self.bot.get_beep_prob_two(x[0][0],x[0][1], x[1][0], x[1][1]) * (1 - self.two_crew_prob[x[0][0],x[0][1], x[1][0], x[1][1]]) + self.bot.get_beep_prob_two(x[1][0],x[1][1], x[0][0], x[0][1]) * (1 - self.two_crew_prob[x[1][0],x[1][1], x[0][0], x[0][1]]) for x in coords]
         sum = np.sum(probs)
 
-        if(np.sum(self.get_crew_probs()) == 0):
-            self.init_crew_prob_one()
+        #if(np.sum(self.get_crew_probs()) == 0):
+        #    self.init_crew_prob_one()
 
         p = probs/sum
         assignment = zip(p, coords)
         for pairs in assignment:
-            self.two_crew_prob[pairs[1][0][0], pairs[1][0][1], pairs[1][1][0], pairs[1][1][1]] = pairs[0]
+            self.two_crew_prob[pairs[1][0][0], pairs[1][0][1], pairs[1][1][0], pairs[1][1][1]] = pairs[0]/2
+            self.two_crew_prob[pairs[1][1][0], pairs[1][1][1], pairs[1][0][0], pairs[1][0][1]] = pairs[0]/2
         #Avoids negative numbers from floating point error
         np.clip(self.crew_probs, a_min = 0,a_max =1, out = self.crew_probs)
 
@@ -515,12 +544,6 @@ class Ship:
     #Two Alien, Two Crew
 
     def init_alien_prob_two(self):
-        #Sets pairs containing cell inside detection square to 0
-        coords = self.open_cell_indices(True)
-        for coord in coords:
-            self.two_alien_prob[coord[0], coord[1]] = 0
-            self.two_alien_prob[:,:,coord[0],coord[1]] = 0
-
         #Counts the number of open cells outside the detection square
         det_sq = self.get_sensor_region(self.bot_loc[0], self.bot_loc[1])
         count = 0
@@ -534,7 +557,6 @@ class Ship:
 
         p = 1 / math.comb(num_open_out+1,2)
         #p = 1 / ( (math.comb(self.num_open_cells+1,2) ) - (count*count + count*num_open_out))
-        #p = 1/ (num_open_out*num_open_out)
 
         cent = self.bot_loc
         coords = self.open_cell_indices(True)
@@ -548,16 +570,15 @@ class Ship:
 
             if not ((i in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (j in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
                 if not ((m in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (n in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
-                    self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p/2
-                    #self.two_alien_prob[pair[1][0], pair[1][1], pair[0][0], pair[0][1]] = p/2
+                    if( (i,j) == (m,n)):
+                        self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p
+                    else:
+                        self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p/2
+                        self.two_alien_prob[pair[1][0], pair[1][1], pair[0][0], pair[0][1]] = p/2
 
+        np.clip(self.two_alien_prob, 0, 1, out = self.two_alien_prob)
 
-        #print("times in loop = ", asdf)
-        #print("total number of pairs = ", math.comb(self.num_open_cells+1,2))
-        #print("number open squares = ", self.num_open_cells)
-        #print("number open cells inside detection square = ", count)
-        #print("number open cells outside detection square = ", num_open_out)
-        #print(p)
+        print(p)
         print("sum of alien pair probs", np.sum(self.two_alien_prob))
 
 
@@ -565,34 +586,39 @@ class Ship:
         #Beep is boolean, whether or not aliens were detected
 
         #indices within detection square based on current location of the bot
-        coords =  self.open_cell_indices(True)
+        coords =  self.open_cell_indices_in_sensor(True)
 
         if beep:
             total_sum = np.sum(self.two_alien_prob)
+            #print('beep alien sum init = ', total_sum)
             cent = (self.bot.get_row(), self.bot.get_col())
             for pair in coords:
                 if not ((pair[0][0] in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (pair[0][1] in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
                     if not ((pair[1][0] in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (pair[1][1] in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
-                        total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]
-                        total_sum -= self.two_alien_prob[pair[1][0], pair[1][1],pair[0][0], pair[0][1]]
+                        if pair[0][0] == pair [1][0] and pair[0][1] == pair[1][1]:
+                            total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]
+                        else:
+                            total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]
+                            total_sum -= self.two_alien_prob[pair[1][0], pair[1][1],pair[0][0], pair[0][1]]
                         self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = 0
                         self.two_alien_prob[pair[1][0], pair[1][1],pair[0][0], pair[0][1]] = 0
-            print('beep sum = ', total_sum)
+            #print('beep sum after subtract = ', total_sum)
             self.two_alien_prob /= total_sum    
         else:
             total_sum = np.sum(self.two_alien_prob)
+            #print('no beep alien sum init = ', total_sum)
             cent = (self.bot.get_row(), self.bot.get_col())
             for pair in coords:
                 if not ((pair[0][0] in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (pair[0][1] in range(cent[1]-(self.k), cent[1]+(self.k)+1))) or not ((pair[1][0] in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (pair[1][1] in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
-                    total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]
-                    total_sum -= self.two_alien_prob[pair[1][0], pair[1][1],pair[0][0], pair[0][1]]
+                    if pair[0][0] == pair [1][0] and pair[0][1] == pair[1][1]:
+                        total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] 
+                    else:
+                        total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]
+                        total_sum -= self.two_alien_prob[pair[1][0], pair[1][1],pair[0][0], pair[0][1]]
                     self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = 0
                     self.two_alien_prob[pair[1][0], pair[1][1],pair[0][0], pair[0][1]] = 0
-            print("no beep sum = ", total_sum)
-            self.two_alien_prob /= total_sum 
-
-
-
+            #print("no beep sum after subtract= ", total_sum)
+            self.two_alien_prob /= total_sum
 
 
     def generate_neighbor_pair_array(self):
@@ -602,26 +628,36 @@ class Ship:
             j1 = [pairs[0][0], pairs[0][1]]
             j2 = [pairs[1][0], pairs[1][1]]
             Ks = np.asarray(list(product(self.ship[j1[0], j1[1]].open_n, self.ship[j2[0], j2[1]].open_n)))
+
             #init neighbor pair arrys
             self.neighbor_pair_array[j1[0], j1[1], j2[0], j2[1]] = Ks
         
 
     def two_two_alien_move_update(self):
-
-        self.neighbor_pair_array
+        #self.neighbor_pair_array
         for pair in self.Js:
-            adjacent_pairs = self.neighbor_pair_array[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]
             j1 = [pair[0][0], pair[0][1]]
             j2 = [pair[1][0], pair[1][1]]
+            adjacent_pairs = self.neighbor_pair_array[j1[0], j1[1], j2[0], j2[1]]
             p = 0
             for adjacent_pair in adjacent_pairs:
                 k1 = [adjacent_pair[0][0], adjacent_pair[0][1]]
                 k2 = [adjacent_pair[1][0], adjacent_pair[1][1]]
-                p+= self.two_alien_prob[k1[0], k1[1], k2[0], k2[1]] * (1/self.open_neighbors[k1[0], k1[1]]) * (1/self.open_neighbors[k2[0], k2[1]])
-                p+= self.two_alien_prob[k2[0], k2[1], k1[0], k1[1]] * (1/self.open_neighbors[k1[0], k1[1]]) * (1/self.open_neighbors[k2[0], k2[1]])
-            self.two_alien_prob[j1[0], j2[0], j1[0], j2[0]] = p/2
-            self.two_alien_prob[j2[0], j2[1],j1[0], j1[1]] = p/2
+                if k1[0] == k2[0] and k1[1] == k2[1]:
+                    p+= self.two_alien_prob[k1[0], k1[1], k2[0], k2[1]] * (1/self.open_neighbors[k1[0], k1[1]]) * (1/self.open_neighbors[k2[0], k2[1]])
+                else:
+                    if j1[0] == j2[0] and j1[1] == j2[1]:
+                        p+= (self.two_alien_prob[k1[0], k1[1], k2[0], k2[1]]) * (1/self.open_neighbors[k1[0], k1[1]]) * (1/self.open_neighbors[k2[0], k2[1]])
+                    else:
+                        p+= (self.two_alien_prob[k1[0], k1[1], k2[0], k2[1]] + self.two_alien_prob[k2[0], k2[1], k1[0], k1[1]]) * (1/self.open_neighbors[k1[0], k1[1]]) * (1/self.open_neighbors[k2[0], k2[1]])
+            
+            if(j1[0] == j2[0] and j1[1] == j2[1]):
+                self.two_alien_prob[j1[0], j2[0], j1[0], j2[0]] = p
+            else:
+                self.two_alien_prob[j1[0], j2[0], j1[0], j2[0]] = p/2
+                self.two_alien_prob[j2[0], j2[1],j1[0], j1[1]] = p/2
 
+        self.two_alien_prob /= np.sum(self.two_alien_prob)
 
     def two_two_bot_move_update(self):
         #This function applies when no alien or crew member was in the square we moved to
