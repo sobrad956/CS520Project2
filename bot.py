@@ -142,6 +142,8 @@ class Bot:
         crew_probs = [left_crew_prob, right_crew_prob, up_crew_prob, down_crew_prob]
         alien_probs = [left_alien_prob, right_alien_prob, up_alien_prob, down_alien_prob]
 
+        #print(crew_probs)
+
         mult_max = self.find_mult_max(crew_probs)
         max_idx = random.choice(mult_max)
         
@@ -379,6 +381,8 @@ class Bot:
         alien_probs = [left_alien_prob, right_alien_prob, up_alien_prob, down_alien_prob]
 
         util = np.subtract(crew_probs, alien_probs)
+
+        #print(util)
 
         mult_max = self.find_mult_max(util)
         max_idx = random.choice(mult_max)

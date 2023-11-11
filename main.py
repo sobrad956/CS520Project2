@@ -134,6 +134,7 @@ def experiment2(k, alphas, boards):
     numBoards = 1
     numTrials = 50
     bots = [3 , 4, 5]
+    #bots = [4]
     avg_crew_saved = np.zeros((3, len(alphas)))
     avg_moves_to_save = np.zeros((3, len(alphas)))
     prob_success = np.zeros((3, len(alphas)))
@@ -153,13 +154,14 @@ def experiment2(k, alphas, boards):
                         i, j = shp.get_unoccupied_cell()
                         shp.ship[i][j].add_crew()
                         start_cells.append(shp.ship[i][j])
+                    print(start_cells)
 
                     i, j = shp.get_unoccupied_alien_cell(k)
                     alien = Alien(i, j, shp)
 
                     shp.print_ship()
                     shp.distances_from_crew()
-                    shp.init_crew_prob()
+                    shp.init_crew_prob_one()
                     shp.init_crew_prob_two()
                 
                     
@@ -194,6 +196,8 @@ def experiment2(k, alphas, boards):
                             start_cells.remove(shp.ship[i][j])
                             saved_counter += 1
                             if saved_counter == 1:
+                                if(np.sum(shp.get_crew_probs()) == 0):
+                                    shp.init_crew_prob_one()
                                 shp.print_ship()
                             if saved_counter == 2:
                                 prob_success[botnum - 3][a] += 1 / (numBoards * numTrials)
@@ -542,7 +546,7 @@ if __name__ == "__main__":
     print("top of main")
     for i in range(1):
         #ship takes in k, D
-        shp = Ship(1, 5)
+        shp = Ship(5, 50)
         shp.generate_ship()
         print("ship generated")
         boards.append(shp)
@@ -551,7 +555,8 @@ if __name__ == "__main__":
 
     #experiement takes k, alpha, boards
 
-    #experiment1(1, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
+    experiment1(5, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
     #experiment2(1, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
-    experiment3(1, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
+    #experiment2(1, [0.1], boards)
+    #experiment3(1, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
 
