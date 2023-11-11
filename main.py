@@ -427,13 +427,11 @@ def experiment3(k, alphas, boards):
 
 
 def experimentK(Ks, alphas, boards):
-    numBoards = 5
-    numTrials = 50
+    numBoards = 3
+    numTrials = 10
     bots = [1]
     avgcrewsaved = np.zeros(len(Ks))
 
-    
-    
     for ki, k in enumerate(Ks):
         board_count = 0
         for board in boards:
@@ -453,6 +451,10 @@ def experimentK(Ks, alphas, boards):
                         i, j = shp.get_unoccupied_alien_cell(k)
                         alien = Alien(i, j, shp)
 
+                        shp.distances_from_crew()
+                        shp.init_crew_prob_one()
+                        shp.init_alien_prob_one()
+
                         print('Board:', board_count, 'K:', k, 'Alpha:', alpha,' Trial:', trial)
                         flag = True
                         while flag:
@@ -462,18 +464,18 @@ def experimentK(Ks, alphas, boards):
                             j = bot.col
 
                             if shp.ship[i][j].contains_alien():
-                                print(f"Dead: {T}")
+                                print(f"Dead: ")
                                 flag = False
                                 break
                             if shp.ship[i][j].contains_crew():
-                                print(f"Saved: {T}")
+                                print(f"Saved: ")
                                 avgcrewsaved[ki] += 1 / (len(boards)*len(alphas)*numTrials)
                                 shp.ship[i][j].remove_crew()
                                 flag = False
                                 break
                             shp.one_one_bot_move_update()
                             if alien.move():
-                                print(f"Dead: {T}")
+                                print(f"Dead: ")
                                 flag = False
                                 break
                             shp.one_one_alien_move_update()
@@ -481,19 +483,17 @@ def experimentK(Ks, alphas, boards):
                             shp.one_one_alien_beep_update(alien_beep)
                             crew_beep = bot.detect_crew(start_cells)
                             shp.one_one_crew_beep_update(crew_beep)
-                            T += 1
                         shp.empty_ship()
             board_count+=1
 
     ks = [str(x) for x in Ks]
-    plt.plot(ks, avgcrewsaved[0])
+    np.save('experimentK/experimentk_plot.npy', avgcrewsaved)
+    plt.plot(ks, avgcrewsaved)
     
     plt.xlabel('Detection Square Radius (K values)')
-    plt.ylabel('Average Number of Crew Members Sa')
-    plt.title('Average Number of Moves Needed to Rescue all Crew Members (One Alien, One Crew) vs Alpha')
-    plt.legend(loc='best')
-    plt.savefig('experiment1/experiment1_plot1.png')
-    np.save('experiment1/experiment1_plot1.npy', avg_moves_to_save)
+    plt.ylabel('Average Number of Crew Members Saved')
+    plt.title('Average Number of Crew Members Saved (One Alien, One Crew, Bot 1) vs Detection Square Radius (K values)')
+    plt.savefig('experimentK/experimentk_plot.png')
     plt.plot()
     plt.close()
 
@@ -643,7 +643,7 @@ if __name__ == "__main__":
     print("top of main")
     for i in range(1):
         #ship takes in k, D
-        shp = Ship(1, 10)
+        shp = Ship(1, 25)
         shp.generate_ship()
         print("ship generated")
         boards.append(shp)
@@ -655,6 +655,7 @@ if __name__ == "__main__":
     #experiment1(5, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
     #experiment2(1, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
     #experiment2(1, [0.1, 0.2], boards)
-    experiment3(2, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
+    #experiment3(2, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
     #experiment3(1, [0.1], boards)
+    experimentK([1, 2, 3, 4, 5, 6, 7, 8], [0.1, 0.3, 0.5, 0.7, 0.9], boards)
 
