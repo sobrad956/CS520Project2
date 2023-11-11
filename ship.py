@@ -19,12 +19,10 @@ class Cell:
         self.alien = False
         self.crew = False
         self.bot = False
-        self.d = d
-        self.distances = np.asarray([[-1 for j in range(self.d)] for i in range(self.d)])
-        self.open_n = []
-        self.Js = None
+        self.d = d  # Size of the ship
+        self.distances = np.asarray([[-1 for j in range(self.d)] for i in range(self.d)])  # Stores distance from this cell to all other cells in the board, closed cells have distance of -1
+        self.open_n = []  # Stores the open cells that are directly adjacent to this cell
         
-
     def set_distance(self, row, col, dist):
         self.distances[row][col] = dist
 
@@ -78,16 +76,16 @@ class Ship:
         self.D = D  # The dimension of the ship as a square
         self.ship = np.asarray([[Cell(i, j, self.D) for j in range(self.D)] for i in range(self.D)])  # creates a DxD 2D grid of closed cells
         self.bot_loc = [-1, -1]  # Stores the initial position of the bot, used to restrict alien generation cells
-        self.crew_probs = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])
-        self.alien_probs = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])
-        self.k = k
-        self.bot = None
-        self.num_open_cells = None
-        self.open_neighbors = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])
-        self.two_crew_prob = np.asarray([[[[0.0 for j in range(self.D)] for i in range(self.D)] for k in range(self.D)] for l in range(self.D)])
-        self.two_alien_prob = np.asarray([[[[0.0 for j in range(self.D)] for i in range(self.D)] for k in range(self.D)] for l in range(self.D)])
-        self.open_cell_mask = np.asarray([[False for j in range(self.D)] for i in range(self.D)])
-        self.neighbor_pair_array = np.asarray([[[[None for j in range(self.D)] for i in range(self.D)] for k in range(self.D)] for l in range(self.D)])
+        self.crew_probs = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])  # Stores the probability of a crew being in a cell for the ship
+        self.alien_probs = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)]) # Stores the probability of an alien being in a cell for the ship
+        self.k = k  # Size of detection square radius
+        self.bot = None  # Reference to the bot on a given ship
+        self.num_open_cells = None  # Number of open cells in the ship
+        self.open_neighbors = np.asarray([[0.0 for j in range(self.D)] for i in range(self.D)])  # stores the number of cells adjacent to a given cell that are open
+        self.two_crew_prob = np.asarray([[[[0.0 for j in range(self.D)] for i in range(self.D)] for k in range(self.D)] for l in range(self.D)])  # Stores the probability of a pair of crew being in two cells for the ship
+        self.two_alien_prob = np.asarray([[[[0.0 for j in range(self.D)] for i in range(self.D)] for k in range(self.D)] for l in range(self.D)]) # Stores the probability of a pair of aliens being in two cells for the ship
+        self.open_cell_mask = np.asarray([[False for j in range(self.D)] for i in range(self.D)])  # Mask for the location in the ship of all open cells
+        self.neighbor_pair_array = np.asarray([[[[None for j in range(self.D)] for i in range(self.D)] for k in range(self.D)] for l in range(self.D)])  # For a given pair of open cells, stores all the possible pairs of neigboring cells to the input cells
 
     def get_crew_probs(self):
         return self.crew_probs
@@ -114,6 +112,7 @@ class Ship:
         return self.bot_loc
 
     def get_sensor_region(self, i, j):
+        """ Returns only the cells in the ship that arre within the alien detection sensor region (square of side 2k + 1)"""
         return self.ship[max(i - self.k, 0):min(i + self.k + 1, self.D), max(j - self.k, 0):min(j + self.k + 1, self.D)]
 
     def print_ship(self):
@@ -215,6 +214,7 @@ class Ship:
                     self.ship[i][j].remove_crew()
 
     def calculate_open_cells(self):
+        """ For every open cell in the ship, stores the neighboring open cells """
         for row in range(self.D):
             for col in range(self.D):
                 if self.ship[row][col].is_open():
@@ -275,20 +275,19 @@ class Ship:
         for start_i in range(self.D):
             for start_j in range(self.D):
                 if self.ship[start_i][start_j].is_open():
-                    start_cells.append(self.ship[start_i][start_j])
+                    start_cells.append(self.ship[start_i][start_j])  # Adds all open cells in the ship to start_cells, since we have to calculate the distance to every other cell from every cell
 
         self.num_open_cells = len(start_cells)
-        for i in range(0, len(start_cells)):
-            #print(i)
+        for i in range(0, len(start_cells)):  # For every open cell in the ship, calculate the distance to all other open cells
             fringe = []
             visited = []
-            cur_state = (start_cells[i], 0)
+            cur_state = (start_cells[i], 0) # The starting cell has a distance of 0
             fringe.append(cur_state)
 
-            while not len(fringe) > 0:
+            while not len(fringe) > 0: # Loop until all open cells in board visited
 
                 cur_state = fringe.pop()
-                cur_state[0].set_distance(start_cells[i].row, start_cells[i].col, cur_state[1])
+                cur_state[0].set_distance(start_cells[i].row, start_cells[i].col, cur_state[1]) 
                 visited.append(cur_state[0])
 
                 children = []
@@ -304,24 +303,26 @@ class Ship:
                     children.append(self.ship[cur_row][cur_col + 1])
 
                 for child in children:
-                    if child.is_open() and (child not in visited) and (not child in fringe):
-                        fringe.append((child, cur_state[1]+1))
+                    if child.is_open() and (child not in visited) and (not child in fringe): # Prevent multiple of the same cell from entering the fringe
+                        fringe.append((child, cur_state[1]+1))  # All children's distances get increased by 1 from parent distance
 
 
     def init_crew_prob_one(self):
-        p = 1 / (self.num_open_cells - 1)
-        mask_func = lambda x: x.is_open() and not x.contains_bot()
-        mask = np.asarray([list(map(mask_func, row)) for row in self.ship])
+        """ Initalizes the crew member probabilities for the case where there is only 1 crew member on the ship """
+        p = 1 / (self.num_open_cells - 1)  # Every cell on the board besiddes the bot's starting cell has an equal probbaility of containing the crew member
+        mask_func = lambda x: x.is_open() and not x.contains_bot()  
+        mask = np.asarray([list(map(mask_func, row)) for row in self.ship]) # returns all the open cells in the ship that do not contain the bot
         self.crew_probs[mask] = p
     
     def init_alien_prob_one(self):
-        det_sq = self.get_sensor_region(self.bot_loc[0], self.bot_loc[1])
+        """ Initializes the alien probabailities for the case where thhere is only 1 alien on the ship """
+        det_sq = self.get_sensor_region(self.bot.get_row(),self.bot.get_col())
         count = 0
         for row in det_sq:
             for elem in row:
                 if elem.is_open():
-                    count += 1
-        num_open_out = self.num_open_cells - count
+                    count += 1  # Counts the number of open cells within the detection square
+        num_open_out = self.num_open_cells - count  # Counts the number of open cells outside of the detection square
         p = 1 / num_open_out
         
         mask_func = lambda x: x.is_open()
@@ -331,10 +332,11 @@ class Ship:
         x,y = self.get_det_sq_indicies()
         mask[x,y] = False
 
-        self.alien_probs[mask] = p
+        self.alien_probs[mask] = p   # Sets all probabilities outside of the detection square to have a probability of containing an alien
 
 
-    def get_det_sq_indicies(self): 
+    def get_det_sq_indicies(self):
+        """ Returns the indices of the cells within the detection square """
         r1 = range(max(self.bot.row - self.k, 0), min(self.bot.row + self.k + 1, self.D))
         r2 = range(max(self.bot.col - self.k, 0),min(self.bot.col + self.k + 1, self.D))
         r3 = list(product(r1, r2))
@@ -344,6 +346,7 @@ class Ship:
     # #Probability updates
     
     def get_out_det_sq_indicies(self):
+        """ Returns indices of cells outside of the detection square """
 
         cent = (self.bot.row, self.bot.col)
         x = []
@@ -356,9 +359,10 @@ class Ship:
                     y.append(j)
         return x,y
 
-    #One Alien, One Crew 
+    # One Alien, One Crew Probabilities 
 
     def one_one_alien_beep_update(self, beep):
+        """ Adjusts alien probaabilities based on feedback from alien detection sensor (One alien on board) """
         #Beep is boolean, whether or not aliens were detected
 
         #indices within detection square based on current location of the bot
@@ -373,28 +377,32 @@ class Ship:
             #set probabilities inside the det sq to 0
             self.alien_probs[x_in,y_in] = 0
             
-        #I think normalization is the same regardless since everything else went to 0
         alien_norm_factor = np.sum(self.get_alien_probs())
-        self.alien_probs /= alien_norm_factor
+        self.alien_probs /= alien_norm_factor  # Normalization
+        if(np.sum(self.get_alien_probs) == 0):
+            self.init_alien_prob_one()
 
-        np.around(self.alien_probs, decimals=10)
+        
+
+        np.around(self.alien_probs, decimals=10)  # For floating point integer errors
             
     
     def one_one_crew_beep_update(self, beep):
+        """ Adjusts crew probabilities based on feedback from crew detection sensor (One crew member on board)"""
     
         if beep:
             #prob_function = lambda x: self.bot.get_beep_prob(x.row, x.col)
             prob_function = lambda x: self.bot.get_beep_prob(x.row, x.col)
-            probs = np.asarray([list(map(prob_function, row)) for row in self.ship])
+            probs = np.asarray([list(map(prob_function, row)) for row in self.ship]) # probability off receiving a beep from any square
 
             
         else:
             prob_function = lambda x: 1 - self.bot.get_beep_prob(x.row, x.col)
-            probs = np.asarray([list(map(prob_function, row)) for row in self.ship])
+            probs = np.asarray([list(map(prob_function, row)) for row in self.ship]) # probability of not receiving a beep from any square
     
         #Denominator
-        sum_array = copy.deepcopy(self.crew_probs)
-        sum_array = np.multiply(sum_array, probs)
+        sum_array = copy.deepcopy(self.crew_probs) 
+        sum_array = np.multiply(sum_array, probs) 
         sum = np.sum(sum_array)
         #Numerator
         self.crew_probs = np.multiply(self.crew_probs, probs)
@@ -407,7 +415,7 @@ class Ship:
 
 
     def one_one_bot_move_update(self):
-        #This function applies when no alien or crew member was in the square we moved to
+        #This function applies when no alien or crew member was in the square we moved to (One crew member one bot on bord)
 
         bot_row = self.bot.get_row()
         bot_col = self.bot.get_col()
@@ -427,6 +435,7 @@ class Ship:
 
 
     def one_one_alien_move_update(self):
+        #This function updates the alien probabilities when there is one alien on the board and the aliens move
         for i in range(self.D):
             for j in range(self.D):
                 p = 0
@@ -448,12 +457,13 @@ class Ship:
                     self.set_alien_probs(i,j,p)
                     np.around(self.alien_probs, decimals=10)
 
-    #One Alien, Two Crew 
+    #One Alien, Two Crew Probabilities
 
     def open_cell_indices(self, repeat):
+        # Returns the combination of all open cell pairs with or without replacement
         mask_func = lambda x: x.is_open() and not x.contains_bot()
         mask = np.asarray([list(map(mask_func, row)) for row in self.ship])
-        mask_trues = np.array(np.where(mask==True)).T
+        mask_trues = np.array(np.where(mask==True)).T  # Returns list of coordinates for all open cells that don't contain the bot
         if repeat:
             coords = list(combinations_with_replacement(mask_trues, 2))
         else:
@@ -462,9 +472,10 @@ class Ship:
 
 
     def open_cell_indices_in_sensor(self, repeat):
+        # Returns the combination of all open cell pairs within the alien detection region with or without replacement
         mask_func = lambda x: x.is_open()
         mask = np.asarray([list(map(mask_func, row)) for row in self.get_sensor_region(self.bot.row, self.bot.col)])
-        mask_trues = np.array(np.where(mask==True)).T
+        mask_trues = np.array(np.where(mask==True)).T # Returns list of coordinates for all open cells in the sensor region
         if repeat:
             coords = list(combinations_with_replacement(mask_trues, 2))
         else:
@@ -472,18 +483,19 @@ class Ship:
         return coords
 
     
-
     def init_crew_prob_two(self):
+        #Initializes the crew member probabilities when there are two crew members on the board
         p = 1/(math.comb(self.num_open_cells, 2) - (self.num_open_cells - 1))
-        coords = self.open_cell_indices(False)
+        coords = self.open_cell_indices(False)  # We get all pairs of open cells without replacement so there are no probabilities on the diagonal
         for pair in coords:
-            self.two_crew_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p/2
+            self.two_crew_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p/2  # We divide the probability by 2 because the matrix is symmetric
             self.two_crew_prob[pair[1][0], pair[1][1], pair[0][0], pair[0][1]] = p/2
             
         #print("p two crew: ", p)
         #print("sum of crew pair probs", np.sum(self.two_crew_prob))
 
     def saved_crew_prob_update(self):
+        #Updates the probabilities once one of the two crew members is saved since we now know that there is only one crew member on thhe board
 
         saved_row = self.bot.get_row()
         saved_col = self.bot.get_col()
@@ -491,35 +503,33 @@ class Ship:
         ind_prob_one = self.two_crew_prob[saved_row, saved_col]
         ind_prob_two = self.two_crew_prob[:,:,saved_row, saved_col]
         
-        new_probs = ind_prob_one + ind_prob_two
+        new_probs = ind_prob_one + ind_prob_two  # We reduce the probability matrix to the single crew case, only taking the spots in the two crew case that had a probability for where the first crew member was saved, since other probabilities are now known to be 0
 
         new_probs /= np.sum(new_probs)
 
         self.crew_probs = new_probs
 
 
-    def one_two_crew_beep_update(self, beep): 
+    def one_two_crew_beep_update(self, beep):
+        # Updates the crew member probabilities based on feedback from crew detector (when two crew on ship)
         if beep:
             coords = self.open_cell_indices(False)
-            probs = [self.bot.get_beep_prob_two(x[0][0],x[0][1], x[1][0], x[1][1]) * self.two_crew_prob[x[0][0],x[0][1], x[1][0], x[1][1]] + self.bot.get_beep_prob_two(x[1][0],x[1][1], x[0][0], x[0][1]) * self.two_crew_prob[x[1][0],x[1][1], x[0][0], x[0][1]] for x in coords]
+            probs = [self.bot.get_beep_prob_two(x[0][0],x[0][1], x[1][0], x[1][1]) * self.two_crew_prob[x[0][0],x[0][1], x[1][0], x[1][1]] + self.bot.get_beep_prob_two(x[1][0],x[1][1], x[0][0], x[0][1]) * self.two_crew_prob[x[1][0],x[1][1], x[0][0], x[0][1]] for x in coords] # Since the matrix is symmetric, we add probabilities swapping order
         else:
             coords = self.open_cell_indices(False)
             probs = [self.bot.get_beep_prob_two(x[0][0],x[0][1], x[1][0], x[1][1]) * (1 - self.two_crew_prob[x[0][0],x[0][1], x[1][0], x[1][1]]) + self.bot.get_beep_prob_two(x[1][0],x[1][1], x[0][0], x[0][1]) * (1 - self.two_crew_prob[x[1][0],x[1][1], x[0][0], x[0][1]]) for x in coords]
         sum = np.sum(probs)
 
-        #if(np.sum(self.get_crew_probs()) == 0):
-        #    self.init_crew_prob_one()
-
-        p = probs/sum
+        p = probs/sum # Normalize
         assignment = zip(p, coords)
         for pairs in assignment:
-            self.two_crew_prob[pairs[1][0][0], pairs[1][0][1], pairs[1][1][0], pairs[1][1][1]] = pairs[0]/2
+            self.two_crew_prob[pairs[1][0][0], pairs[1][0][1], pairs[1][1][0], pairs[1][1][1]] = pairs[0]/2  # Reassigns the probabaility to both sides of symmetric matrix so we halve the probability
             self.two_crew_prob[pairs[1][1][0], pairs[1][1][1], pairs[1][0][0], pairs[1][0][1]] = pairs[0]/2
         #Avoids negative numbers from floating point error
         np.clip(self.crew_probs, a_min = 0,a_max =1, out = self.crew_probs)
 
     def one_two_bot_move_update(self):
-        #This function applies when no alien or crew member was in the square we moved to
+        #This function applies when no alien or crew member was in the square we moved to (two crew members on board)
 
         bot_row = self.bot.get_row()
         bot_col = self.bot.get_col()
@@ -571,7 +581,7 @@ class Ship:
             if not ((i in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (j in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
                 if not ((m in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (n in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
                     if( (i,j) == (m,n)):
-                        self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p
+                        self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p # If the indices are the same, it is located on the diagonal of a symmetric matrix, so no need to split probability
                     else:
                         self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = p/2
                         self.two_alien_prob[pair[1][0], pair[1][1], pair[0][0], pair[0][1]] = p/2
@@ -588,22 +598,25 @@ class Ship:
         #indices within detection square based on current location of the bot
         coords =  self.open_cell_indices_in_sensor(True)
 
+        #Update if an alien is detected
         if beep:
             total_sum = np.sum(self.two_alien_prob)
             #print('beep alien sum init = ', total_sum)
             cent = (self.bot.get_row(), self.bot.get_col())
             for pair in coords:
+                #If a alien is detected pairs where both elements are outside the detection window go to 0
                 if not ((pair[0][0] in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (pair[0][1] in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
                     if not ((pair[1][0] in range(cent[0]-(self.k), cent[0]+(self.k)+1)) and (pair[1][1] in range(cent[1]-(self.k), cent[1]+(self.k)+1))):
                         if pair[0][0] == pair [1][0] and pair[0][1] == pair[1][1]:
-                            total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]
+                            total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]  #If the indices are the same, it is located on the diagonal of a symmetric matrix, so no need to split probability
                         else:
                             total_sum -= self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]]
                             total_sum -= self.two_alien_prob[pair[1][0], pair[1][1],pair[0][0], pair[0][1]]
                         self.two_alien_prob[pair[0][0], pair[0][1], pair[1][0], pair[1][1]] = 0
                         self.two_alien_prob[pair[1][0], pair[1][1],pair[0][0], pair[0][1]] = 0
             #print('beep sum after subtract = ', total_sum)
-            self.two_alien_prob /= total_sum    
+            self.two_alien_prob /= total_sum 
+        #If no alien detected   
         else:
             total_sum = np.sum(self.two_alien_prob)
             #print('no beep alien sum init = ', total_sum)
@@ -622,11 +635,13 @@ class Ship:
 
 
     def generate_neighbor_pair_array(self):
+        #This function finds all the pairs that are pair adjacent to every other pair. This is only done once but is used below
         open_cells = np.array(np.where(self.open_cell_mask == True)).T
         self.Js = list(combinations_with_replacement(open_cells, 2))
         for pairs in self.Js:
             j1 = [pairs[0][0], pairs[0][1]]
             j2 = [pairs[1][0], pairs[1][1]]
+            #Cross product of the neighbors of the two members of the target pair
             Ks = np.asarray(list(product(self.ship[j1[0], j1[1]].open_n, self.ship[j2[0], j2[1]].open_n)))
 
             #init neighbor pair arrys
@@ -634,11 +649,18 @@ class Ship:
         
 
     def two_two_alien_move_update(self):
-        #self.neighbor_pair_array
+        #This function updates probabilities after both aliens move
+        
+        #Iterate through all pairs, J
         for pair in self.Js:
             j1 = [pair[0][0], pair[0][1]]
             j2 = [pair[1][0], pair[1][1]]
+            
+            #For each J, iterate through the pairs that are "pair-adjacent" as defined in write up
             adjacent_pairs = self.neighbor_pair_array[j1[0], j1[1], j2[0], j2[1]]
+            
+            #Update probability according to the calculated changes
+            #The probability that it was previously adjacent and then moved in essentially
             p = 0
             for adjacent_pair in adjacent_pairs:
                 k1 = [adjacent_pair[0][0], adjacent_pair[0][1]]

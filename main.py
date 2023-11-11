@@ -9,9 +9,10 @@ from bot import Bot
 
 
 def experiment1(k, alphas, boards):
+    """This runs the 1 alien, 1 crew member experiments (bots 1 and 2)"""
     numBoards = len(boards)
     numTrials = 50
-    bots = [1]
+    bots = [1,2]
     avg_crew_saved = np.zeros((2, len(alphas)))
     avg_moves_to_save = np.zeros((2, len(alphas)))
     prob_success = np.zeros((2, len(alphas)))
@@ -133,10 +134,11 @@ def experiment1(k, alphas, boards):
 
 
 def experiment2(k, alphas, boards):
+    """THis runs the 1 alien 2 crew member experiements (bots 3,4,5)"""
     numBoards = len(boards)
     numTrials = 10
-    #bots = [3 , 4, 5]
-    bots = [4]
+    bots = [3 , 4, 5]
+    #bots = [4]
     avg_crew_saved = np.zeros((3, len(alphas)))
     avg_moves_to_save = np.zeros((3, len(alphas)))
     prob_success = np.zeros((3, len(alphas)))
@@ -176,10 +178,12 @@ def experiment2(k, alphas, boards):
                     
                     T = 0
                     saved_counter = 0
+                    crew_beep = False
                     while saved_counter != 2:
 
-                        
-                        
+                        #Once one crew member has been saved, we revert to one crew probabilites
+                        #Bot 5 only moves if it didn't just hear a crew beep
+
                         if (botnum == 3) or (botnum == 4 and saved_counter == 1):
                             #print(np.sum(shp.get_crew_probs()))
                             bot.bot1_move()
@@ -187,8 +191,9 @@ def experiment2(k, alphas, boards):
                             #print(np.sum(shp.get_two_crew_probs()))
                             bot.bot4_move()
                         elif(botnum == 5 and saved_counter == 1):
-                            bot.bot2_move()
-                        else:
+                            if not crew_beep:
+                                bot.bot2_move()
+                        elif not crew_beep:
                             bot.bot5_move()
                         
                         i = bot.row
@@ -205,6 +210,7 @@ def experiment2(k, alphas, boards):
                             start_cells.remove(shp.ship[i][j])
                             saved_counter += 1
                             if saved_counter == 1:
+                                #Resets to one crew probabilities
                                 shp.saved_crew_prob_update()
                             if saved_counter == 2:
                                 prob_success[botnum - 3][a] += 1 / (numBoards * numTrials)
@@ -272,6 +278,8 @@ def experiment2(k, alphas, boards):
 
 
 def experiment3(k, alphas, boards):
+    """Two alien two crew experimentation"""
+
     numBoards = len(boards)
     numTrials = 10
     bots = [6, 7, 8]
@@ -321,7 +329,9 @@ def experiment3(k, alphas, boards):
                     saved_counter = 0
                     flag = True
                     while saved_counter != 2:
-                        
+
+                        #Also reverts to 1 crew probabilites
+                        #Bot 8 alternates between its two movement schemes
                         
                         if (botnum == 6) or (saved_counter == 1 and botnum == 7):
                             bot.bot1_move()
@@ -329,8 +339,10 @@ def experiment3(k, alphas, boards):
                             bot.bot7_move()
                         elif(saved_counter == 1 and botnum == 8):
                             bot.bot2_move()
-                        else:
+                        elif T //2 == 0:
                             bot.bot8_move()
+                        else:
+                            bot.bot8_move2()
                         i = bot.row
                         j = bot.col
 
@@ -345,6 +357,7 @@ def experiment3(k, alphas, boards):
                             start_cells.remove(shp.ship[i][j])
                             saved_counter += 1
                             if saved_counter == 1:
+                                #Resets to one crew probabilities
                                 shp.saved_crew_prob_update()
                                 shp.print_ship()
                             if saved_counter == 2:
@@ -427,7 +440,8 @@ def experiment3(k, alphas, boards):
 
 
 def experimentK(Ks, alphas, boards):
-    numBoards = 3
+    """Experiment to determine optimal K value"""
+    numBoards = len(boards)
     numTrials = 10
     bots = [1]
     avgcrewsaved = np.zeros(len(Ks))
@@ -438,7 +452,10 @@ def experimentK(Ks, alphas, boards):
             shp = board
             for a, alpha in enumerate(alphas):
                 for botnum in bots:
+                    
                     for trial in range(numTrials):
+                        T = 0
+                        
                         i, j = shp.get_unoccupied_cell()
                         bot = Bot(i, j, k, shp, botnum, alpha)
                         shp.bot = bot
@@ -458,24 +475,24 @@ def experimentK(Ks, alphas, boards):
                         print('Board:', board_count, 'K:', k, 'Alpha:', alpha,' Trial:', trial)
                         flag = True
                         while flag:
-                            bot.bot1_move()
+                            bot.bot2_move()
 
                             i = bot.row
                             j = bot.col
 
                             if shp.ship[i][j].contains_alien():
-                                print(f"Dead: ")
+                                print(f"Dead: ", T)
                                 flag = False
                                 break
                             if shp.ship[i][j].contains_crew():
-                                print(f"Saved: ")
+                                print(f"Saved: ", T)
                                 avgcrewsaved[ki] += 1 / (len(boards)*len(alphas)*numTrials)
                                 shp.ship[i][j].remove_crew()
                                 flag = False
                                 break
                             shp.one_one_bot_move_update()
                             if alien.move():
-                                print(f"Dead: ")
+                                print(f"Dead: ", T)
                                 flag = False
                                 break
                             shp.one_one_alien_move_update()
@@ -483,6 +500,7 @@ def experimentK(Ks, alphas, boards):
                             shp.one_one_alien_beep_update(alien_beep)
                             crew_beep = bot.detect_crew(start_cells)
                             shp.one_one_crew_beep_update(crew_beep)
+                            T += 1
                         shp.empty_ship()
             board_count+=1
 
@@ -641,7 +659,7 @@ def main(k, D):
 if __name__ == "__main__":
     boards = []
     print("top of main")
-    for i in range(1):
+    for i in range(3):
         #ship takes in k, D
         shp = Ship(1, 25)
         shp.generate_ship()
@@ -658,4 +676,5 @@ if __name__ == "__main__":
     #experiment3(2, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], boards)
     #experiment3(1, [0.1], boards)
     experimentK([1, 2, 3, 4, 5, 6, 7, 8], [0.1, 0.3, 0.5, 0.7, 0.9], boards)
+    #experimentK([1, 2, 3, 4, 5, 6, 7, 8], [0.1, 0.2], boards)
 
